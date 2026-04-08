@@ -1,0 +1,180 @@
+#translator-panel {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 300px;
+  max-height: 400px;
+  background: white;
+  border: 2px solid #666;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 10000;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+  resize: both;
+  min-width: 250px;
+  min-height: 100px;
+}
+
+#translator-panel.minimized {
+  width: 200px;
+  height: 40px;
+  max-height: 40px;
+}
+
+#translator-panel.minimized #translator-content {
+  display: none;
+}
+
+#translator-header {
+  background: #666;
+  color: white;
+  padding: 8px 10px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: move;
+  user-select: none;
+  font-size: 14px;
+}
+
+#translator-controls {
+  display: flex;
+  gap: 5px;
+}
+
+#minimize-translator,
+#close-translator {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+#minimize-translator:hover,
+#close-translator:hover {
+  background-color: rgba(255,255,255,0.2);
+}
+
+#translator-content {
+  padding: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.translation-item {
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  background: #f9f9f9;
+  font-size: 13px;
+  position: relative;
+  padding-right: 30px;
+}
+
+.translation-item:hover {
+  background: #f0f0f0;
+}
+
+.remove-translation {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #777;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.translation-item:hover .remove-translation {
+  display: flex;
+}
+
+.remove-translation:hover {
+  background: #555;
+}
+
+.original-text {
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #333;
+  font-size: 12px;
+}
+
+.translated-text {
+  color: #555;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.loading {
+  color: #666;
+  font-style: italic;
+}
+
+.selected-text {
+  background-color: #ffeb3b !important;
+  transition: background-color 0.3s;
+}
+
+/* PDF specific styles */
+.textLayer {
+  user-select: text !important;
+}
+
+.textLayer span,
+.textLayer div {
+  user-select: text !important;
+  pointer-events: auto !important;
+}
+
+#viewer .page {
+  user-select: text !important;
+}
+
+/* Ensure PDF text is selectable */
+.page .textLayer > span {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Compact view for minimalistic design */
+#translator-panel.compact .translation-item {
+  margin-bottom: 5px;
+  padding: 5px;
+  font-size: 11px;
+  padding-right: 25px;
+}
+
+#translator-panel.compact .remove-translation {
+  width: 15px;
+  height: 15px;
+  font-size: 10px;
+  top: 3px;
+  right: 3px;
+}
+
+#translator-panel.compact .original-text {
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+
+#translator-panel.compact .translated-text {
+  font-size: 11px;
+}
