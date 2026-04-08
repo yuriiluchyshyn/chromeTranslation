@@ -131,23 +131,57 @@
   transition: background-color 0.3s;
 }
 
-/* PDF specific styles */
+/* PDF specific styles - Enhanced */
 .textLayer {
   user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  pointer-events: auto !important;
 }
 
 .textLayer span,
 .textLayer div {
   user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
   pointer-events: auto !important;
 }
 
 #viewer .page {
   user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
 }
 
 /* Ensure PDF text is selectable */
 .page .textLayer > span {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Additional PDF viewer support */
+#viewerContainer,
+.pdfViewer,
+.canvasWrapper {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Override any PDF viewer restrictions */
+* {
+  -webkit-touch-callout: default !important;
+}
+
+/* Ensure text selection works in embedded PDFs */
+embed[type="application/pdf"],
+object[type="application/pdf"] {
   user-select: text !important;
   -webkit-user-select: text !important;
   -moz-user-select: text !important;

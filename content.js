@@ -18,10 +18,70 @@ class TextTranslator {
     this.translations = result.translations || {};
     this.panelPosition = result.panelPosition || { x: 20, y: 20 };
     
+    // Force PDF text selection immediately
+    this.forcePDFTextSelection();
+    
     if (this.isEnabled) {
       this.createPanel();
       this.attachEventListeners();
     }
+    
+    // Additional PDF setup after page load
+    setTimeout(() => {
+      this.forcePDFTextSelection();
+      if (this.isEnabled) {
+        this.attachPDFListeners();
+      }
+    }, 2000);
+  }
+
+  forcePDFTextSelection() {
+    // Inject CSS to force text selection
+    const style = document.createElement('style');
+    style.textContent = `
+      .textLayer, .textLayer *, #viewer, #viewer *, .page, .page * {
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+        pointer-events: auto !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Override any JavaScript that might disable text selection
+    if (window.PDFViewerApplication) {
+      console.log('PDFViewerApplication detected, overriding text selection');
+      
+      // Wait for PDF to load
+      const checkPDFReady = () => {
+        if (window.PDFViewerApplication.pdfDocument) {
+          console.log('PDF document loaded, enabling text selection');
+          this.enableAllTextSelection();
+        } else {
+          setTimeout(checkPDFReady, 1000);
+        }
+      };
+      checkPDFReady();
+    }
+  }
+
+  enableAllTextSelection() {
+    // Remove any event listeners that might prevent text selection
+    const elements = document.querySelectorAll('*');
+    elements.forEach(el => {
+      // Remove common selection-blocking events
+      el.style.userSelect = 'text';
+      el.style.webkitUserSelect = 'text';
+      el.style.mozUserSelect = 'text';
+      el.style.msUserSelect = 'text';
+      
+      // Remove selectstart event listeners that return false
+      const newEl = el.cloneNode(true);
+      if (el.parentNode) {
+        el.parentNode.replaceChild(newEl, el);
+      }
+    });
   }
 
   createPanel() {
@@ -40,6 +100,7 @@ class TextTranslator {
       <div id="translator-header">
         <span>Translations (${Object.keys(this.translations).length})</span>
         <div id="translator-controls">
+          <button id="test-translate" title="Test Translation" style="background: none; border: none; color: white; font-size: 12px; cursor: pointer; padding: 2px 5px;">T</button>
           <button id="minimize-translator" title="Minimize">−</button>
           <button id="close-translator" title="Close">×</button>
         </div>
@@ -64,6 +125,39 @@ class TextTranslator {
     document.getElementById('minimize-translator').addEventListener('click', () => {
       this.toggleMinimize();
     });
+    
+    // Test translate button
+    document.getElementById('test-translate').addEventListener('click', () => {
+      console.log('Test translate clicked');
+      this.testTranslation();
+    });
+  }
+
+  testTranslation() {
+    // Force translation of current selection or test text
+    const selection = window.getSelection().toString().trim();
+    if (selection) {
+      console.log('Testing translation with selected text:', selection);
+      this.handleTextSelection();
+    } else {
+      console.log('No selection, testing with sample text');
+      // Test with sample text
+      this.translations['test'] = 'Translating...';
+      this.updatePanel();
+      this.showPanel();
+      
+      setTimeout(async () => {
+        try {
+          const translation = await this.translateText('test');
+          this.translations['test'] = translation;
+          this.saveTranslations();
+          this.updatePanel();
+        } catch (error) {
+          this.translations['test'] = 'Translation failed';
+          this.updatePanel();
+        }
+      }, 500);
+    }
   }
 
   toggleMinimize() {
@@ -138,13 +232,27 @@ class TextTranslator {
     // Double click event
     document.addEventListener('dblclick', (e) => {
       if (!this.isEnabled || this.isClickOnPanel(e)) return;
+      console.log('Double click detected');
       this.handleTextSelection();
     });
 
     // Text selection event
     document.addEventListener('mouseup', (e) => {
       if (!this.isEnabled || this.isClickOnPanel(e)) return;
+      console.log('Mouse up detected');
       setTimeout(() => this.handleTextSelection(), 100);
+    });
+
+    // Selection change event (important for PDFs)
+    document.addEventListener('selectionchange', () => {
+      if (!this.isEnabled) return;
+      setTimeout(() => {
+        const selection = window.getSelection();
+        if (selection && selection.toString().trim().length > 1) {
+          console.log('Selection change detected:', selection.toString().trim());
+          this.handleTextSelection();
+        }
+      }, 200);
     });
 
     // PDF specific event listeners
@@ -154,16 +262,30 @@ class TextTranslator {
   attachPDFListeners() {
     // Enhanced PDF detection
     const isPDFPage = () => {
-      return window.location.href.includes('.pdf') || 
-             document.querySelector('.textLayer') ||
-             document.querySelector('#viewer') ||
-             document.querySelector('.page') ||
-             document.querySelector('[data-page-number]') ||
-             window.PDFViewerApplication;
+      const indicators = [
+        window.location.href.includes('.pdf'),
+        document.querySelector('.textLayer'),
+        document.querySelector('#viewer'),
+        document.querySelector('.page'),
+        document.querySelector('[data-page-number]'),
+        document.querySelector('#viewerContainer'),
+        document.querySelector('.pdfViewer'),
+        window.PDFViewerApplication,
+        document.title.includes('.pdf'),
+        document.querySelector('embed[type="application/pdf"]'),
+        document.querySelector('object[type="application/pdf"]')
+      ];
+      
+      return indicators.some(indicator => indicator);
     };
+
+    console.log('PDF detection result:', isPDFPage());
 
     if (isPDFPage()) {
       console.log('PDF detected, setting up PDF listeners');
+      
+      // Force enable text selection on PDF elements
+      this.enablePDFTextSelection();
       
       // Multiple strategies for PDF text selection
       this.setupPDFTextSelection();
@@ -174,10 +296,17 @@ class TextTranslator {
           if (mutation.addedNodes.length > 0) {
             mutation.addedNodes.forEach((node) => {
               if (node.nodeType === 1) { // Element node
-                if (node.classList && (node.classList.contains('textLayer') || 
+                if (node.classList && (
+                    node.classList.contains('textLayer') || 
                     node.classList.contains('page') ||
-                    node.querySelector && node.querySelector('.textLayer'))) {
-                  setTimeout(() => this.setupPDFTextSelection(), 500);
+                    node.classList.contains('canvasWrapper') ||
+                    (node.querySelector && node.querySelector('.textLayer'))
+                )) {
+                  console.log('New PDF content detected');
+                  setTimeout(() => {
+                    this.enablePDFTextSelection();
+                    this.setupPDFTextSelection();
+                  }, 500);
                 }
               }
             });
@@ -192,64 +321,112 @@ class TextTranslator {
       
       // Periodic check for PDF content
       const checkInterval = setInterval(() => {
+        this.enablePDFTextSelection();
         this.setupPDFTextSelection();
-      }, 2000);
+      }, 3000);
       
-      // Clean up after 30 seconds
+      // Clean up after 60 seconds
       setTimeout(() => {
         clearInterval(checkInterval);
         observer.disconnect();
-      }, 30000);
+      }, 60000);
     }
+  }
+
+  enablePDFTextSelection() {
+    // Force enable text selection on all PDF-related elements
+    const selectors = [
+      '.textLayer',
+      '.textLayer span',
+      '.textLayer div',
+      '.page',
+      '#viewer',
+      '#viewerContainer',
+      '.pdfViewer',
+      '[data-page-number]',
+      '.canvasWrapper'
+    ];
+    
+    selectors.forEach(selector => {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach(element => {
+        element.style.userSelect = 'text';
+        element.style.webkitUserSelect = 'text';
+        element.style.mozUserSelect = 'text';
+        element.style.msUserSelect = 'text';
+        element.style.pointerEvents = 'auto';
+      });
+    });
   }
 
   setupPDFTextSelection() {
     // Strategy 1: Text layers (PDF.js)
     const textLayers = document.querySelectorAll('.textLayer, .textLayer > span, .textLayer > div');
+    console.log('Found text layers:', textLayers.length);
+    
     textLayers.forEach(layer => {
       if (!layer.dataset.translatorListenerAdded) {
         layer.dataset.translatorListenerAdded = 'true';
+        console.log('Adding listeners to text layer');
         
         layer.addEventListener('mouseup', (e) => {
           if (!this.isEnabled) return;
+          console.log('Text layer mouseup');
           setTimeout(() => this.handleTextSelection(), 200);
         });
         
         layer.addEventListener('dblclick', (e) => {
           if (!this.isEnabled) return;
+          console.log('Text layer double click');
           setTimeout(() => this.handleTextSelection(), 100);
+        });
+        
+        layer.addEventListener('selectstart', (e) => {
+          console.log('Text selection started');
         });
       }
     });
     
     // Strategy 2: PDF viewer containers
-    const pdfContainers = document.querySelectorAll('#viewer, .page, [data-page-number]');
+    const pdfContainers = document.querySelectorAll('#viewer, .page, [data-page-number], #viewerContainer, .pdfViewer');
+    console.log('Found PDF containers:', pdfContainers.length);
+    
     pdfContainers.forEach(container => {
       if (!container.dataset.translatorListenerAdded) {
         container.dataset.translatorListenerAdded = 'true';
+        console.log('Adding listeners to PDF container');
         
         container.addEventListener('mouseup', (e) => {
           if (!this.isEnabled) return;
+          console.log('PDF container mouseup');
           setTimeout(() => this.handleTextSelection(), 200);
         });
         
         container.addEventListener('dblclick', (e) => {
           if (!this.isEnabled) return;
+          console.log('PDF container double click');
           setTimeout(() => this.handleTextSelection(), 100);
         });
       }
     });
     
-    // Strategy 3: Document-wide listeners for PDF
-    if (window.location.href.includes('.pdf') || window.PDFViewerApplication) {
-      document.addEventListener('selectionchange', () => {
+    // Strategy 3: Direct event listeners on document for PDF pages
+    if (!document.dataset.pdfListenersAdded) {
+      document.dataset.pdfListenersAdded = 'true';
+      console.log('Adding document-level PDF listeners');
+      
+      // Context menu event (right-click selection)
+      document.addEventListener('contextmenu', (e) => {
         if (!this.isEnabled) return;
-        setTimeout(() => {
-          const selection = window.getSelection();
-          if (selection && selection.toString().trim().length > 1) {
-            this.handleTextSelection();
-          }
-        }, 300);
+        setTimeout(() => this.handleTextSelection(), 100);
+      });
+      
+      // Keyboard selection (Ctrl+A, Shift+arrows, etc.)
+      document.addEventListener('keyup', (e) => {
+        if (!this.isEnabled) return;
+        if (e.ctrlKey || e.shiftKey) {
+          setTimeout(() => this.handleTextSelection(), 200);
+        }
       });
     }
   }
