@@ -436,37 +436,71 @@ class TextTranslator {
   }
 
   async handleTextSelection() {
-    const selectedText = window.getSelection().toString().trim();
-    if (!selectedText || selectedText.length < 2) return;
+    let selectedText;
+    try {
+      selectedText = window.getSelection().toString();
+    } catch (error) {
+      console.error('Error getting selection:', error);
+      return;
+    }
+    
+    if (!selectedText) {
+      console.log('No text selected');
+      return;
+    }
+    
+    selectedText = selectedText.trim();
+    if (!selectedText || selectedText.length < 2) {
+      console.log('Selected text too short:', selectedText);
+      return;
+    }
 
     // Enhanced text cleaning for PDFs
-    let cleanText = selectedText
-      .replace(/\s+/g, ' ')  // Replace multiple whitespace with single space
-      .replace(/\n+/g, ' ')  // Replace newlines with spaces
-      .replace(/\r+/g, ' ')  // Replace carriage returns
-      .replace(/\t+/g, ' ')  // Replace tabs
-      .trim();
+    let cleanText;
+    try {
+      cleanText = selectedText
+        .replace(/\s+/g, ' ')  // Replace multiple whitespace with single space
+        .replace(/\n+/g, ' ')  // Replace newlines with spaces
+        .replace(/\r+/g, ' ')  // Replace carriage returns
+        .replace(/\t+/g, ' ')  // Replace tabs
+        .trim();
+      
+      // Remove common PDF artifacts
+      cleanText = cleanText
+        .replace(/^\d+\s*/, '')  // Remove leading page numbers
+        .replace(/\s*\d+$/, '')  // Remove trailing page numbers
+        .replace(/[^\w\s\.,!?;:'"()-]/g, ' ')  // Remove special characters but keep punctuation
+        .replace(/\s+/g, ' ')  // Clean up multiple spaces again
+        .trim();
+    } catch (error) {
+      console.error('Error cleaning text:', error);
+      cleanText = selectedText.trim();
+    }
     
-    // Remove common PDF artifacts
-    cleanText = cleanText
-      .replace(/^\d+\s*/, '')  // Remove leading page numbers
-      .replace(/\s*\d+$/, '')  // Remove trailing page numbers
-      .replace(/[^\w\s\.,!?;:'"()-]/g, ' ')  // Remove special characters but keep punctuation
-      .replace(/\s+/g, ' ')  // Clean up multiple spaces again
-      .trim();
-    
-    if (!cleanText || cleanText.length < 2) return;
+    if (!cleanText || cleanText.length < 2) {
+      console.log('Cleaned text too short:', cleanText);
+      return;
+    }
     
     console.log('Selected text:', cleanText);
     
     // Highlight selected text briefly
-    this.highlightSelection();
+    try {
+      this.highlightSelection();
+    } catch (error) {
+      console.error('Error highlighting selection:', error);
+    }
 
     // Check if already translated - if so, move to top
-    if (this.translations[cleanText]) {
+    if (this.translations && this.translations[cleanText]) {
       this.moveToTop(cleanText);
       this.showPanel();
       return;
+    }
+
+    // Initialize translations object if undefined
+    if (!this.translations) {
+      this.translations = {};
     }
 
     // Add to translations with loading state
@@ -477,7 +511,7 @@ class TextTranslator {
     // Translate text
     try {
       const translation = await this.translateText(cleanText);
-      this.translations[cleanText] = translation;
+      this.translations[cleanText] = translation || 'Translation failed';
       this.saveTranslations();
       this.updatePanel();
     } catch (error) {
@@ -510,6 +544,11 @@ class TextTranslator {
   }
 
   async translateText(text) {
+    if (!text || typeof text !== 'string') {
+      console.error('Invalid text for translation:', text);
+      return 'Invalid text';
+    }
+
     // Using multiple translation APIs with fallbacks
     const apis = [
       () => this.translateWithMyMemory(text),
@@ -520,10 +559,11 @@ class TextTranslator {
     for (const api of apis) {
       try {
         const result = await api();
-        if (result && result !== text) {
+        if (result && result !== text && typeof result === 'string') {
           return result;
         }
       } catch (error) {
+        console.error('API translation failed:', error);
         continue;
       }
     }
@@ -532,35 +572,54 @@ class TextTranslator {
   }
 
   async translateWithMyMemory(text) {
-    const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|uk`);
-    const data = await response.json();
-    
-    if (data.responseStatus === 200 && data.responseData.translatedText) {
-      return data.responseData.translatedText;
+    try {
+      const encodedText = encodeURIComponent(text);
+      const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodedText}&langpair=en|uk`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
+        return data.responseData.translatedText;
+      }
+      throw new Error('MyMemory API returned invalid response');
+    } catch (error) {
+      console.error('MyMemory translation error:', error);
+      throw error;
     }
-    throw new Error('MyMemory API failed');
   }
 
   async translateWithLibreTranslate(text) {
-    // Alternative free translation API
-    const response = await fetch('https://libretranslate.de/translate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        q: text,
-        source: 'en',
-        target: 'uk',
-        format: 'text'
-      })
-    });
-    
-    const data = await response.json();
-    if (data.translatedText) {
-      return data.translatedText;
+    try {
+      const response = await fetch('https://libretranslate.de/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          q: text,
+          source: 'en',
+          target: 'uk',
+          format: 'text'
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (data && data.translatedText && typeof data.translatedText === 'string') {
+        return data.translatedText;
+      }
+      throw new Error('LibreTranslate API returned invalid response');
+    } catch (error) {
+      console.error('LibreTranslate translation error:', error);
+      throw error;
     }
-    throw new Error('LibreTranslate API failed');
   }
 
   fallbackTranslation(text) {
@@ -591,66 +650,115 @@ class TextTranslator {
   }
 
   moveToTop(text) {
-    // Store the translation
-    const translation = this.translations[text];
-    
-    // Remove from current position
-    delete this.translations[text];
-    
-    // Create new object with this translation first
-    this.translations = { [text]: translation, ...this.translations };
-    
-    // Save and update
-    this.saveTranslations();
-    this.updatePanel();
+    try {
+      if (!this.translations || !text || typeof text !== 'string') {
+        console.error('Invalid parameters for moveToTop:', text, this.translations);
+        return;
+      }
+
+      // Store the translation
+      const translation = this.translations[text];
+      
+      if (!translation) {
+        console.error('Translation not found for text:', text);
+        return;
+      }
+      
+      // Remove from current position
+      delete this.translations[text];
+      
+      // Create new object with this translation first
+      this.translations = { [text]: translation, ...this.translations };
+      
+      // Save and update
+      this.saveTranslations();
+      this.updatePanel();
+    } catch (error) {
+      console.error('Error in moveToTop:', error);
+    }
   }
 
   removeTranslation(text) {
-    delete this.translations[text];
-    this.saveTranslations();
-    this.updatePanel();
+    try {
+      if (!this.translations || !text) {
+        console.error('Invalid parameters for removeTranslation:', text);
+        return;
+      }
+      
+      delete this.translations[text];
+      this.saveTranslations();
+      this.updatePanel();
+    } catch (error) {
+      console.error('Error in removeTranslation:', error);
+    }
   }
 
   updatePanel() {
     if (!this.panel) return;
     
-    const header = this.panel.querySelector('#translator-header span');
-    header.textContent = `Translations (${Object.keys(this.translations).length})`;
-    
-    const content = document.getElementById('translator-content');
-    content.innerHTML = '';
-    
-    const entries = Object.entries(this.translations);
-    
-    if (entries.length === 0) {
-      content.innerHTML = '<p style="color: #666; text-align: center; font-size: 12px; margin: 10px;">No translations yet.<br>Double-click or select text to translate.</p>';
-      return;
-    }
-    
-    entries.forEach(([original, translation]) => {
-      const item = document.createElement('div');
-      item.className = 'translation-item';
-      item.innerHTML = `
-        <button class="remove-translation" title="Remove translation">×</button>
-        <div class="original-text">${this.escapeHtml(original)}</div>
-        <div class="translated-text ${translation === 'Translating...' ? 'loading' : ''}">${this.escapeHtml(translation)}</div>
-      `;
+    try {
+      const header = this.panel.querySelector('#translator-header span');
+      if (header && this.translations) {
+        header.textContent = `Translations (${Object.keys(this.translations).length})`;
+      }
       
-      // Add remove functionality
-      const removeBtn = item.querySelector('.remove-translation');
-      removeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.removeTranslation(original);
+      const content = document.getElementById('translator-content');
+      if (!content) return;
+      
+      content.innerHTML = '';
+      
+      if (!this.translations) {
+        this.translations = {};
+      }
+      
+      const entries = Object.entries(this.translations);
+      
+      if (entries.length === 0) {
+        content.innerHTML = '<p style="color: #666; text-align: center; font-size: 12px; margin: 10px;">No translations yet.<br>Double-click or select text to translate.</p>';
+        return;
+      }
+      
+      entries.forEach(([original, translation]) => {
+        try {
+          const item = document.createElement('div');
+          item.className = 'translation-item';
+          item.innerHTML = `
+            <button class="remove-translation" title="Remove translation">×</button>
+            <div class="original-text">${this.escapeHtml(original || '')}</div>
+            <div class="translated-text ${translation === 'Translating...' ? 'loading' : ''}">${this.escapeHtml(translation || '')}</div>
+          `;
+          
+          // Add remove functionality
+          const removeBtn = item.querySelector('.remove-translation');
+          if (removeBtn) {
+            removeBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              this.removeTranslation(original);
+            });
+          }
+          
+          content.appendChild(item);
+        } catch (error) {
+          console.error('Error creating translation item:', error);
+        }
       });
-      
-      content.appendChild(item);
-    });
+    } catch (error) {
+      console.error('Error updating panel:', error);
+    }
   }
 
   escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    try {
+      if (!text || typeof text !== 'string') {
+        return '';
+      }
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    } catch (error) {
+      console.error('Error escaping HTML:', error);
+      return String(text || '');
+    }
   }
 
   showPanel() {
@@ -660,7 +768,13 @@ class TextTranslator {
   }
 
   async saveTranslations() {
-    await chrome.storage.sync.set({ translations: this.translations });
+    try {
+      if (this.translations && typeof this.translations === 'object') {
+        await chrome.storage.sync.set({ translations: this.translations });
+      }
+    } catch (error) {
+      console.error('Error saving translations:', error);
+    }
   }
 
   setCompactMode(compact) {
