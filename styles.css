@@ -131,63 +131,6 @@
   transition: background-color 0.3s;
 }
 
-/* PDF specific styles - Enhanced */
-.textLayer {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
-  pointer-events: auto !important;
-}
-
-.textLayer span,
-.textLayer div {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
-  pointer-events: auto !important;
-}
-
-#viewer .page {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
-}
-
-/* Ensure PDF text is selectable */
-.page .textLayer > span {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
-}
-
-/* Additional PDF viewer support */
-#viewerContainer,
-.pdfViewer,
-.canvasWrapper {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
-}
-
-/* Override any PDF viewer restrictions */
-* {
-  -webkit-touch-callout: default !important;
-}
-
-/* Ensure text selection works in embedded PDFs */
-embed[type="application/pdf"],
-object[type="application/pdf"] {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
-  -ms-user-select: text !important;
-}
-
 /* Compact view for minimalistic design */
 #translator-panel.compact .translation-item {
   margin-bottom: 5px;
@@ -212,3 +155,85 @@ object[type="application/pdf"] {
 #translator-panel.compact .translated-text {
   font-size: 11px;
 }
+
+#translator-panel {
+    position: fixed;
+    width: 300px;
+    max-height: 400px;
+    background: #ffffff;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+  }
+  
+  #translator-header {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    user-select: none;
+  }
+  
+  #translator-title {
+    font-weight: bold;
+    font-size: 13px;
+    color: #444;
+  }
+  
+  #translator-controls button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #888;
+    padding: 0 4px;
+  }
+  
+  #translator-controls button:hover {
+    color: #000;
+  }
+  
+  #translator-content {
+    overflow-y: auto;
+    padding: 10px;
+    background: #fff;
+  }
+  
+  .translation-item {
+    margin-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 8px;
+  }
+  
+  .translation-item:last-child {
+    border-bottom: none;
+  }
+  
+  .orig {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 3px;
+    font-style: italic;
+  }
+  
+  .trans {
+    font-size: 14px;
+    color: #000;
+    font-weight: 500;
+  }
+  
+  .no-data {
+    text-align: center;
+    color: #aaa;
+    font-size: 12px;
+    padding: 20px;
+  }
+
+  

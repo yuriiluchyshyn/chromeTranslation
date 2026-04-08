@@ -1,101 +1,196 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
   <meta charset="utf-8">
   <style>
     body {
-      width: 220px;
-      padding: 10px;
-      font-family: Arial, sans-serif;
+      width: 280px;
+      padding: 16px;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: #1c1e21;
+      margin: 0;
+      background: transparent;
     }
-    .control-group {
-      margin-bottom: 15px;
-    }
-    .toggle-container {
+
+    .popup-container {
+      background-color: #ffffff;
+      border-radius: 16px;
       display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
+      flex-direction: column;
+      gap: 16px;
     }
-    .switch {
-      position: relative;
-      width: 50px;
-      height: 24px;
-    }
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: .4s;
-      border-radius: 24px;
-    }
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-    input:checked + .slider {
-      background-color: #666;
-    }
-    input:checked + .slider:before {
-      transform: translateX(26px);
-    }
-    .checkbox-container {
+
+    .header-section {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px;
+      padding: 2px 0;
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.2px;
+    }
+
+    .switch { position: relative; width: 42px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e4e6eb; transition: .3s; border-radius: 22px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: #007bff; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    .translation-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .sub-label {
       font-size: 12px;
+      color: #8a8d91;
+      font-weight: 500;
+      margin-bottom: 2px;
     }
-    .clear-btn {
-      background: #777;
+
+    .language-picker {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .arrow {
+      color: #bcc0c4;
+      font-size: 16px;
+    }
+
+    .select-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 0; 
+    }
+
+    select {
+      width: 100%;
+      padding: 8px 24px 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #dddfe2;
+      font-size: 13px;
+      font-weight: 500;
+      outline: none;
+      background: #ffffff;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      color: #1c1e21;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    select:hover { background-color: #f7f8f9; }
+    select:focus { border-color: #007bff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.12); }
+
+    .select-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      color: #8c939d;
+      pointer-events: none;
+    }
+
+    /* ВІДНОВЛЕНИЙ І ОСУЧАСНЕНИЙ БЛОК PDF ALERT */
+    #pdf-alert {
+      display: none;
+      background: #f0f7ff;
+      color: #0056b3;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      border: 1px solid #d0e5ff;
+      text-align: center;
+      line-height: 1.4;
+    }
+    
+    .highlight { 
+      font-weight: 700; 
+      display: block; 
+      margin-bottom: 6px; 
+      font-size: 14px; 
+      color: #004494; 
+    }
+    
+    .btn-primary {
+      background: #007bff;
       color: white;
       border: none;
-      padding: 6px 12px;
-      border-radius: 4px;
+      padding: 10px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 12px;
+      font-weight: 600;
       width: 100%;
+      margin-top: 12px;
+      font-size: 13px;
+      transition: background 0.2s;
     }
-    .clear-btn:hover {
-      background: #555;
+    
+    .btn-primary:hover { 
+      background: #0056b3; 
     }
   </style>
 </head>
 <body>
-  <div class="control-group">
-    <div class="toggle-container">
-      <span>Translator:</span>
+  <div class="popup-container">
+    
+    <div class="header-section">
+      <h1 class="title">Перекладач</h1>
       <label class="switch">
-        <input type="checkbox" id="toggleExtension">
+        <input type="checkbox" id="toggle-translator" checked>
         <span class="slider"></span>
       </label>
     </div>
-    
-    <div class="checkbox-container">
-      <input type="checkbox" id="compactMode">
-      <label for="compactMode">Compact view</label>
+
+    <div class="translation-section">
+      <span class="sub-label">Напрямок перекладу:</span>
+      <div class="language-picker">
+        <div class="select-wrapper">
+          <select id="lang-from">
+            <option value="autodetect">Автовизначення</option>
+            <option value="en">Англійська</option>
+            <option value="uk">Українська</option>
+            <option value="de">Німецька</option>
+            <option value="fr">Французька</option>
+            <option value="es">Іспанська</option>
+          </select>
+          <span class="select-icon">▼</span>
+        </div>
+
+        <span class="arrow">→</span>
+
+        <div class="select-wrapper">
+          <select id="lang-to">
+            <option value="uk">Українська</option>
+            <option value="en">Англійська</option>
+            <option value="de">Німецька</option>
+            <option value="fr">Французька</option>
+            <option value="pl">Польська</option>
+          </select>
+          <span class="select-icon">▼</span>
+        </div>
+      </div>
     </div>
+
+    <div id="pdf-alert">
+      <span class="highlight">📄 Виявлено PDF-документ</span>
+      Для активації інструментів перекладу перейдіть до інтерактивного режиму.
+      <button class="btn-primary" id="open-current-pdf">Перейти до інтерактивного перегляду</button>
+    </div>
+
   </div>
-  
-  <div class="control-group">
-    <button class="clear-btn" id="clearTranslations">Clear All Translations</button>
-  </div>
-  
+
   <script src="popup.js"></script>
 </body>
 </html>
