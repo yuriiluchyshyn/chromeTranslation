@@ -10,7 +10,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         .then(data => {
           sendResponse({ 
             translation: data[0].map(x => x[0]).join(''),
-            detectedLang: data[2].toLowerCase() 
+            detectedLang: data[2].toLowerCase(),
+            targetLang: tl
           });
         })
         .catch(() => sendResponse({ translation: '❌ Error' }));

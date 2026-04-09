@@ -1,13 +1,22 @@
 # Chrome Translation Extension
 
-A simple and elegant Chrome extension that translates selected text to Ukrainian with a draggable, minimalistic dictionary panel.
+A simple and elegant Chrome extension that translates selected text to multiple languages with a draggable, minimalistic dictionary panel.
+
+![Extension Screenshot](screenshot.png)
+
+*The extension in action showing the dictionary panel with translations between English and Ukrainian, including language detection badges and audio pronunciation buttons.*
 
 ## Features
+
+![Dictionary Panel](screenshot.png)
 
 ### 🌐 Universal Translation
 - **Web Pages**: Works on any website
 - **PDF Support**: Full support for PDF documents and viewers
+- **Multi-language Support**: Translate to Ukrainian, English, Polish, Spanish, German
+- **Auto Language Detection**: Automatically detects source language
 - **Smart Text Selection**: Double-click or select text to translate
+- **Text-to-Speech**: Audio pronunciation for translated text
 - **Multiple APIs**: Uses multiple translation services with fallback support
 
 ### 🎨 User Interface
@@ -23,12 +32,16 @@ A simple and elegant Chrome extension that translates selected text to Ukrainian
 - **Individual Removal**: Remove specific translations with hover buttons
 - **Translation Counter**: Shows total number of saved translations
 - **No Duplicates**: Existing translations move to top instead of duplicating
+- **Audio Playback**: Click to hear pronunciation of translations
 
 ### ⚙️ Easy Controls
 - **Toggle On/Off**: Simple switch in extension popup
 - **Compact Mode**: Toggle for minimalistic view
 - **Clear All**: Remove all translations at once
 - **Position Memory**: Panel remembers its position between sessions
+- **Language Settings**: Configure interface and translation languages
+- **Audio Controls**: Built-in text-to-speech for pronunciation
+- **API Configuration**: Set up Google Cloud API key for premium translations
 
 ## Installation
 
@@ -58,6 +71,8 @@ For enhanced translation accuracy, you can configure a Google Cloud Translation 
 
 4. **Configure in Extension**:
    - Right-click the extension icon and select "Options"
+   - Choose your preferred interface language (Ukrainian/English)
+   - Set your default translation language (Ukrainian, English, Polish, Spanish, German)
    - Paste your API key in the "Google Cloud API Key" field
    - Click "Save Settings"
 
@@ -69,19 +84,26 @@ For enhanced translation accuracy, you can configure a Google Cloud Translation 
 1. Click the extension icon and toggle it ON
 2. Navigate to any webpage or PDF
 3. Double-click any word or select text
-4. Translation appears in the left panel with original text and Ukrainian translation
+4. Translation appears in the left panel with:
+   - Original text with auto-detected language
+   - Translation in your selected target language
+   - Audio pronunciation button (🔊) for listening to the translation
 
 ### Panel Controls
 - **Move**: Drag the header to reposition the panel
 - **Minimize**: Click the "−" button to collapse to header only
 - **Close**: Click the "×" button to hide the panel
 - **Remove**: Hover over translations and click the "×" to remove individual items
+- **Audio**: Click the speaker icon (🔊) to hear pronunciation of any translation
 
 ### Settings
 - **Toggle Extension**: Click extension icon to turn on/off
 - **Compact Mode**: Enable in popup for smaller interface
 - **Clear All**: Remove all saved translations
-- **API Configuration**: Right-click extension icon > "Options" to configure Google Cloud API key
+- **Advanced Settings**: Right-click extension icon > "Options" to access:
+  - **Extension Language**: Choose interface language (Ukrainian/English)
+  - **Default Translation Language**: Set target language (Ukrainian, English, Polish, Spanish, German)
+  - **Google Cloud API Key**: Configure premium translation service
 
 ## PDF Support
 
@@ -90,6 +112,32 @@ The extension works seamlessly with PDF files:
 - Handles PDF.js and other PDF rendering systems
 - Cleans up PDF-specific formatting artifacts
 - Supports dynamically loaded PDF content
+
+## Configuration Options
+
+Access advanced settings by right-clicking the extension icon and selecting "Options":
+
+### Interface Settings
+- **Extension Language**: Choose between Ukrainian and English for the extension interface
+- **Default Translation Language**: Set your preferred target language for translations
+
+### API Configuration  
+- **Google Cloud API Key**: Enter your API key for premium translation quality
+- **Automatic Fallback**: Extension automatically uses free services if API key is not configured
+
+### Language Features
+- **Automatic Detection**: The extension automatically detects the language of selected text
+- **Multi-directional Translation**: Translate from any supported language to your target language
+- **Audio Pronunciation**: Built-in text-to-speech for hearing correct pronunciation
+- **Language Memory**: Remembers your preferred target language across sessions
+
+### Language Options
+The extension supports translation to:
+- Ukrainian (Українська) - Default
+- English - International communication
+- Polish (Polski) - Regional support
+- Spanish (Español) - Global language
+- German (Deutsch) - European support
 
 ## Translation APIs
 

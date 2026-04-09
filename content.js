@@ -10,8 +10,16 @@
     isEnabled: true,
     uiLang: 'uk',
     toLang: 'uk',
-    audio: new Audio()
+    audio: null
   };
+
+  // Initialize audio object safely
+  try {
+    state.audio = new Audio();
+  } catch (error) {
+    console.log('Audio initialization error:', error);
+    state.audio = null;
+  }
 
   const url = window.location.href.toLowerCase();
   const isPdf = url.includes('.pdf') || document.contentType === 'application/pdf';
@@ -40,14 +48,35 @@
     `;
     b.onmouseover = () => { b.style.opacity = '1'; b.style.background = '#1a73e8'; };
     b.onmouseout = () => { b.style.opacity = '0.8'; b.style.background = 'rgba(26, 115, 232, 0.8)'; };
-    b.onclick = () => chrome.runtime.sendMessage({ action: 'openPdfReader' });
+    b.onclick = () => {
+      if (chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({ action: 'openPdfReader' });
+      }
+    };
     const target = document.documentElement || document.body;
     if (target) target.appendChild(b);
   }
 
   chrome.storage.sync.get(['translationsArray', 'translatorEnabled', 'uiLang', 'toLang', 'fromLang'], function(res) {
-    if (chrome.runtime.lastError) return;
+    if (chrome.runtime.lastError || !chrome.runtime.id) {
+      console.log('Extension context invalidated, reloading...');
+      return;
+    }
     state.translations = res.translationsArray || [];
+    
+    // Міграція: додаємо actualToLang для існуючих перекладів
+    let needsUpdate = false;
+    state.translations.forEach(item => {
+      if (!item.actualToLang) {
+        item.actualToLang = item.toLang || 'uk';
+        needsUpdate = true;
+      }
+    });
+    
+    if (needsUpdate) {
+      chrome.storage.sync.set({ translationsArray: state.translations });
+    }
+    
     state.isEnabled = res.translatorEnabled !== false;
     state.uiLang = res.uiLang || 'uk';
     state.toLang = res.toLang || 'uk';
@@ -79,7 +108,7 @@
         .tr-hint { position:fixed; z-index:2147483647; background:rgba(0,0,0,0.85); color:white; padding:8px 12px; border-radius:8px; font-size:14px; pointer-events:none; transform:translate(-50%, -100%); transition:opacity 0.4s; text-align:center; max-width:250px; }
       </style>
       <div style="background:#f7f8f9; padding:12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; cursor:move;" id="tr-header">
-        <strong style="font-size:14px;">${t.dict}</strong>
+        <strong style="font-size:14px;color: black;">${t.dict}</strong>
         <div style="display:flex; align-items:center;">
           <button id="tr-clear" style="border:none; background:none; cursor:pointer; font-size:13px; margin-right:8px; color:#1a73e8;">${t.clear}</button>
           <button id="tr-close" style="border:none; background:none; cursor:pointer; font-size:20px; color:#999;">×</button>
@@ -117,12 +146,18 @@
       save(); showHint(existing.trans, rect);
     } else {
       // Тут завжди Auto-detect за замовчуванням для нових слів
-      state.translations.unshift({ orig: text, trans: "...", fromLang: "auto", toLang: state.toLang });
+      state.translations.unshift({ orig: text, trans: "...", fromLang: "auto", toLang: state.toLang, actualToLang: state.toLang });
       renderList();
       chrome.runtime.sendMessage({ action: 'translateText', text }, (res) => {
+        if (chrome.runtime.lastError || !chrome.runtime.id) {
+          console.log('Extension context invalidated during translation');
+          return;
+        }
         const item = state.translations.find(i => i.orig === text);
         if (item && res) {
-          item.trans = res.translation; item.fromLang = res.detectedLang;
+          item.trans = res.translation; 
+          item.fromLang = res.detectedLang;
+          item.actualToLang = res.targetLang || state.toLang; // Зберігаємо фактичну мову перекладу
           save(); showHint(item.trans, rect);
         }
       });
@@ -139,7 +174,9 @@
   }
 
   function save() {
-    chrome.storage.sync.set({ translationsArray: state.translations });
+    if (chrome.runtime && chrome.runtime.id) {
+      chrome.storage.sync.set({ translationsArray: state.translations });
+    }
     renderList();
   }
 
@@ -158,18 +195,46 @@
         </div>
         <div style="font-size:14px; font-weight:600; color:#1c1e21; display:flex; align-items:center; gap:2px;">
           <span>${escapeHTML(i.trans)}</span>
-          <span class="lang-badge">${i.toLang || 'uk'}</span>
-          <button class="tr-speak" data-t="${escapeHTML(i.trans)}" data-l="${i.toLang || 'uk'}">🔊</button>
+          <span class="lang-badge">${i.actualToLang || i.toLang || 'uk'}</span>
+          <button class="tr-speak" data-t="${escapeHTML(i.trans)}" data-l="${i.actualToLang || i.toLang || 'uk'}">🔊</button>
         </div>
       </div>`).join('');
 
     list.querySelectorAll('.tr-speak').forEach(b => b.onclick = (e) => {
-      const btn = e.currentTarget; btn.classList.add('playing');
+      const btn = e.currentTarget;
+      
+      // Очищуємо всі попередні підсвічування
+      list.querySelectorAll('.tr-speak.playing').forEach(prevBtn => {
+        prevBtn.classList.remove('playing');
+      });
+      
+      // Зупиняємо попереднє аудіо якщо грає
+      if (state.audio) {
+        state.audio.pause();
+        state.audio.currentTime = 0;
+      }
+      
+      btn.classList.add('playing');
+      
       chrome.runtime.sendMessage({ action: 'speakAI', text: btn.dataset.t, langCode: btn.dataset.l }, (r) => {
-        if (r?.audio) {
-          state.audio.src = "data:audio/mp3;base64," + r.audio;
-          state.audio.play(); state.audio.onended = () => btn.classList.remove('playing');
-        } else btn.classList.remove('playing');
+        if (chrome.runtime.lastError || !chrome.runtime.id) {
+          console.log('Extension context invalidated during audio request');
+          btn.classList.remove('playing');
+          return;
+        }
+        if (r?.audio && state.audio) {
+          try {
+            state.audio.src = "data:audio/mp3;base64," + r.audio;
+            state.audio.onended = () => btn.classList.remove('playing');
+            state.audio.onerror = () => btn.classList.remove('playing');
+            state.audio.play().catch(() => btn.classList.remove('playing'));
+          } catch (error) {
+            console.log('Audio playback error:', error);
+            btn.classList.remove('playing');
+          }
+        } else {
+          btn.classList.remove('playing');
+        }
       });
     });
   }
