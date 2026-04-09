@@ -36,6 +36,31 @@ See https://github.com/adobe-type-tools/cmap-resources
   <link rel="stylesheet" href="viewer.css" />
 
   <script src="viewer.mjs" type="module"></script>
+  
+  <!-- Auto file picker script for local files -->
+  <script>
+    // Check if we should auto-open file picker
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('openfile') === 'true') {
+      // Wait for PDF.js to load, then trigger file picker
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          // Try to find and click the open file button
+          const openFileButton = document.getElementById('openFile');
+          if (openFileButton) {
+            console.log('Auto-triggering file picker for local file');
+            openFileButton.click();
+          } else {
+            // Fallback: try to find the file input directly
+            const fileInput = document.querySelector('input[type="file"]');
+            if (fileInput) {
+              fileInput.click();
+            }
+          }
+        }, 1000); // Wait 1 second for PDF.js to fully initialize
+      });
+    }
+  </script>
 </head>
 
 <body tabindex="0">

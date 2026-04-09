@@ -1,21 +1,26 @@
 {
   "manifest_version": 3,
   "name": "AI Text Translator",
-  "version": "3.2",
+  "version": "3.7",
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "tabs",
+    "offscreen"
   ],
   "host_permissions": [
     "https://translate.googleapis.com/*",
     "https://texttospeech.googleapis.com/*",
-    "<all_urls>"
+    "<all_urls>",
+    "file:///*"
   ],
-  "options_ui": {
-    "page": "options.html",
-    "open_in_tab": false
-  },
+  "web_accessible_resources": [
+    {
+      "resources": [ "pdfjs/*", "offscreen.html" ],
+      "matches": [ "<all_urls>" ]
+    }
+  ],
   "background": {
     "service_worker": "background.js"
   },
@@ -25,21 +30,12 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "32": "icons/icon32.png",
-      "48": "icons/icon48.png"
-    }
+    "default_popup": "popup.html"
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content.js"
-      ],
+      "matches": [ "<all_urls>" ],
+      "js": [ "content.js" ],
       "run_at": "document_start"
     }
   ]
