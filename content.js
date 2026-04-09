@@ -29,7 +29,7 @@
     b.id = 'tr-pdf-float-btn';
     b.innerHTML = i18n.uk.pdfBtn;
     b.style.cssText = `
-      position: fixed !important; top: 130px !important; right: 20px !important;
+      position: fixed !important; top: 70px !important; right: 10px !important;
       z-index: 2147483647 !important; background: rgba(26, 115, 232, 0.8) !important;
       color: white !important; border: 1px solid rgba(255,255,255,0.2) !important;
       padding: 8px 14px !important; border-radius: 6px !important;
