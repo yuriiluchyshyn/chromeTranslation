@@ -18,6 +18,13 @@
 
   if (isPdf && !isOurReader) {
     const showBtn = () => {
+      if (!state.isEnabled) {
+        // Remove button if translator is disabled
+        const existingBtn = document.getElementById('tr-pdf-float-btn');
+        if (existingBtn) existingBtn.remove();
+        return;
+      }
+      
       if (document.getElementById('tr-pdf-float-btn')) return;
       const b = document.createElement('button');
       b.id = 'tr-pdf-float-btn';
@@ -26,8 +33,12 @@
       b.onclick = () => chrome.runtime.sendMessage({ action: 'openPdfReader', pdfUrl: window.location.href });
       (document.documentElement || document.body).appendChild(b);
     };
-    showBtn();
-    setTimeout(showBtn, 1000);
+    
+    // Initial show - will be called after storage is loaded
+    setTimeout(() => {
+      showBtn();
+      setTimeout(showBtn, 1000);
+    }, 100);
   }
 
   chrome.storage.sync.get(['translationsArray', 'translatorEnabled', 'uiLang', 'toLang'], function (res) {
@@ -37,6 +48,33 @@
     state.uiLang = res.uiLang || 'uk';
     state.toLang = res.toLang || 'uk';
     if (!isPdf || isOurReader) { createPanel(); setupSelectionHandler(); }
+  });
+
+  // Listen for storage changes to update the enabled state
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync' && changes.translatorEnabled) {
+      state.isEnabled = changes.translatorEnabled.newValue !== false;
+      
+      // Hide panel if translator is disabled
+      if (!state.isEnabled && state.panel) {
+        state.panel.style.display = 'none';
+      }
+      
+      // Update PDF button visibility if on PDF page
+      if (isPdf && !isOurReader) {
+        const existingBtn = document.getElementById('tr-pdf-float-btn');
+        if (!state.isEnabled && existingBtn) {
+          existingBtn.remove();
+        } else if (state.isEnabled && !existingBtn) {
+          const b = document.createElement('button');
+          b.id = 'tr-pdf-float-btn';
+          b.innerHTML = i18n.uk.pdfBtn;
+          b.style.cssText = `position:fixed!important;top:70px!important;right:10px!important;z-index:2147483647!important;background:rgba(26, 115, 232, 0.8)!important;color:white!important;border:1px solid rgba(255,255,255,0.2)!important;padding:8px 14px!important;border-radius:6px!important;cursor:pointer!important;font-weight:500!important;font-family:system-ui,sans-serif!important;font-size:13px!important;box-shadow:0 2px 10px rgba(0,0,0,0.1)!important;backdrop-filter:blur(4px);`;
+          b.onclick = () => chrome.runtime.sendMessage({ action: 'openPdfReader', pdfUrl: window.location.href });
+          (document.documentElement || document.body).appendChild(b);
+        }
+      }
+    }
   });
 
   function createPanel() {
@@ -141,6 +179,8 @@
   }
 
   function processText(text, rect) {
+    if (!state.isEnabled) return; // Don't process if translator is disabled
+    
     if (!state.panel) createPanel();
     state.panel.style.display = 'flex';
     const existing = state.translations.find(i => i.orig === text);
