@@ -38,6 +38,31 @@ A simple and elegant Chrome extension that translates selected text to Ukrainian
 4. Click "Load unpacked" and select the extension folder
 5. The extension icon will appear in your Chrome toolbar
 
+### Google Cloud API Key Setup (Optional)
+
+For enhanced translation accuracy, you can configure a Google Cloud Translation API key:
+
+1. **Create a Google Cloud Project**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+
+2. **Enable Translation API**:
+   - Navigate to "APIs & Services" > "Library"
+   - Search for "Cloud Translation API"
+   - Click on it and press "Enable"
+
+3. **Create API Key**:
+   - Go to "APIs & Services" > "Credentials"
+   - Click "Create Credentials" > "API Key"
+   - Copy the generated API key
+
+4. **Configure in Extension**:
+   - Right-click the extension icon and select "Options"
+   - Paste your API key in the "Google Cloud API Key" field
+   - Click "Save Settings"
+
+**Note**: The extension works without an API key using free translation services. The Google Cloud API provides higher quality translations and better rate limits.
+
 ## Usage
 
 ### Basic Translation
@@ -56,6 +81,7 @@ A simple and elegant Chrome extension that translates selected text to Ukrainian
 - **Toggle Extension**: Click extension icon to turn on/off
 - **Compact Mode**: Enable in popup for smaller interface
 - **Clear All**: Remove all saved translations
+- **API Configuration**: Right-click extension icon > "Options" to configure Google Cloud API key
 
 ## PDF Support
 
@@ -67,10 +93,27 @@ The extension works seamlessly with PDF files:
 
 ## Translation APIs
 
-The extension uses multiple translation services:
-1. **MyMemory API** - Primary translation service
-2. **LibreTranslate** - Backup translation service
-3. **Fallback Dictionary** - Common words for offline support
+The extension uses multiple translation services with automatic fallback:
+
+1. **Google Cloud Translation API** - Premium service (requires API key)
+   - Highest translation quality
+   - Better handling of context and idioms
+   - Higher rate limits
+   - Configured through extension options
+
+2. **MyMemory API** - Primary free service
+   - Good translation quality
+   - No API key required
+   - Rate limited
+
+3. **LibreTranslate** - Backup free service
+   - Open source translation service
+   - No API key required
+   - Fallback option
+
+4. **Fallback Dictionary** - Offline support
+   - Common words for basic translation
+   - Works without internet connection
 
 ## Technical Details
 
@@ -80,7 +123,11 @@ The extension uses multiple translation services:
 ├── popup.html         # Extension popup interface
 ├── popup.js          # Popup functionality
 ├── content.js        # Main translation logic
+├── background.js     # Background service worker
+├── options.html      # Options page for API key configuration
+├── options.js        # Options page functionality
 ├── styles.css        # Panel styling
+├── icons/           # Extension icons
 └── README.md         # This file
 ```
 
@@ -113,8 +160,10 @@ The extension uses multiple translation services:
 ## Privacy
 
 - All translations are stored locally in Chrome's storage
+- Google Cloud API key (if provided) is stored locally and only used for translation requests
 - No personal data is sent to external servers except for translation requests
 - Translation APIs receive only the selected text for translation
+- API keys are never shared or transmitted to third parties
 
 ## License
 
