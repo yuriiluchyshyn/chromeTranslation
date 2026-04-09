@@ -1,58 +1,51 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // 1. ПЕРЕКЛАД + ВИЗНАЧЕННЯ МОВИ
+  // 1. ПЕРЕКЛАД GOOGLE (Free)
   if (request.action === 'translateText') {
     chrome.storage.sync.get(['fromLang', 'toLang'], (settings) => {
-      const from = settings.fromLang || 'autodetect';
-      const to = settings.toLang || 'uk';
+      const sl = settings.fromLang === 'auto' ? 'auto' : (settings.fromLang || 'auto');
+      const tl = settings.toLang || 'uk';
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(request.text)}`;
       
-      fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(request.text)}&langpair=${from}|${to}`)
+      fetch(url)
         .then(res => res.json())
         .then(data => {
-          // MyMemory повертає код визначеної мови у matches
-          const detected = data.responseData.detectedSourceLanguage || 'en';
           sendResponse({ 
-            translation: data?.responseData?.translatedText || '❌',
-            detectedLang: detected // Передаємо визначену мову назад у словник
+            translation: data[0].map(x => x[0]).join(''),
+            detectedLang: data[2].toLowerCase() 
           });
         })
-        .catch(() => sendResponse({ translation: '❌' }));
+        .catch(() => sendResponse({ translation: '❌ Error' }));
     });
     return true; 
   }
 
-  // 2. ОЗВУЧЕННЯ
+  // 2. ОЗВУЧЕННЯ GOOGLE CLOUD AI
   if (request.action === 'speakAI') {
-    const { text, langCode } = request;
+    chrome.storage.sync.get(['googleApiKey'], (res) => {
+      const key = res.googleApiKey;
+      if (!key) return sendResponse({ error: "No API Key" });
 
-    chrome.storage.sync.get(['googleApiKey'], (settings) => {
-      const apiKey = settings.googleApiKey;
-      if (!apiKey) return sendResponse({ error: "No API Key" });
-
-      // Розширений мапінг мов
       const voiceMap = {
+        'pl': { code: 'pl-PL', name: 'pl-PL-Wavenet-A' },
         'uk': { code: 'uk-UA', name: 'uk-UA-Wavenet-A' },
         'en': { code: 'en-US', name: 'en-US-Wavenet-D' },
-        'pl': { code: 'pl-PL', name: 'pl-PL-Wavenet-A' }, // Польська
-        'de': { code: 'de-DE', name: 'de-DE-Wavenet-B' },
-        'fr': { code: 'fr-FR', name: 'fr-FR-Wavenet-C' },
-        'es': { code: 'es-ES', name: 'es-ES-Wavenet-B' }
+        'de': { code: 'de-DE', name: 'de-DE-Wavenet-B' }
       };
 
-      // Якщо прийшов код 'pl-PL' або просто 'pl', ми його почистимо
-      const shortCode = langCode.split('-')[0].toLowerCase();
-      const voice = voiceMap[shortCode] || voiceMap['en'];
+      const code = request.langCode.split('-')[0];
+      const voice = voiceMap[code] || voiceMap['en'];
 
-      const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
-      const body = {
-        input: { text: text },
-        voice: { languageCode: voice.code, name: voice.name },
-        audioConfig: { audioEncoding: 'MP3', speakingRate: 0.95 }
-      };
-
-      fetch(url, { method: 'POST', body: JSON.stringify(body) })
-        .then(res => res.json())
-        .then(data => sendResponse({ audio: data.audioContent }))
-        .catch(() => sendResponse({ error: true }));
+      fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          input: { text: request.text },
+          voice: { languageCode: voice.code, name: voice.name },
+          audioConfig: { audioEncoding: 'MP3', speakingRate: 0.95 }
+        })
+      })
+      .then(r => r.json())
+      .then(data => sendResponse({ audio: data.audioContent }))
+      .catch(() => sendResponse({ error: true }));
     });
     return true;
   }

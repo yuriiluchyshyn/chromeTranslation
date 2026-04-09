@@ -1,38 +1,32 @@
 {
   "manifest_version": 3,
-  "name": "Text Translator to Ukrainian",
-  "version": "3.1",
+  "name": "AI Text Translator",
+  "version": "3.2",
   "permissions": [
     "storage",
     "activeTab",
     "scripting"
   ],
   "host_permissions": [
+    "https://translate.googleapis.com/*",
+    "https://texttospeech.googleapis.com/*",
     "<all_urls>"
   ],
-  "background": {
-    "service_worker": "background.js"
-  },
   "options_ui": {
     "page": "options.html",
     "open_in_tab": false
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content.js"
-      ],
-      "css": [
-        "styles.css"
-      ],
-      "match_about_blank": true,
-      "run_at": "document_idle"
-    }
-  ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
 }

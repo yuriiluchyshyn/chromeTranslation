@@ -2,66 +2,43 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Налаштування Перекладача</title>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      padding: 20px;
-      background-color: #f8f9fa;
-      color: #3c4043;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      padding: 24px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-    }
-    h2 { margin-top: 0; font-size: 22px; color: #202124; }
-    .section { margin-bottom: 20px; }
-    label { display: block; font-weight: 500; margin-bottom: 8px; font-size: 14px; }
-    input[type="password"] {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #dadce0;
-      border-radius: 4px;
-      box-sizing: border-box;
-      font-family: monospace;
-      font-size: 14px;
-    }
-    .hint { font-size: 12px; color: #70757a; margin-top: 6px; }
-    .status {
-      margin-top: 15px;
-      font-size: 13px;
-      color: #1a73e8;
-      display: none;
-    }
-    button {
-      background-color: #1a73e8;
-      color: white;
-      border: none;
-      padding: 10px 24px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 500;
-      margin-top: 10px;
-    }
-    button:hover { background-color: #1765cc; }
+    body { font-family: system-ui, sans-serif; padding: 40px; background: #f8f9fa; display: flex; justify-content: center; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); width: 100%; max-width: 500px; }
+    h2 { margin: 0 0 20px 0; font-size: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .field { margin-bottom: 20px; }
+    label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #555; }
+    select, input { width: 100%; padding: 10px; border: 1px solid #dadce0; border-radius: 6px; box-sizing: border-box; outline: none; }
+    input:focus { border-color: #1a73e8; }
+    button { background: #1a73e8; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; }
+    #status { margin-top: 15px; text-align: center; color: #1e8e3e; font-weight: bold; display: none; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Налаштування API</h2>
-    
-    <div class="section">
-      <label for="apiKey">Google Cloud Text-to-Speech API Key:</label>
-      <input type="password" id="apiKey" placeholder="Введіть ваш ключ тут...">
-      <div class="hint">Цей ключ використовується для якісного AI-озвучення тексту.</div>
+  <div class="card">
+    <h2 id="title">Settings</h2>
+    <div class="field">
+      <label id="l-ui">Extension Language:</label>
+      <select id="uiLang">
+        <option value="uk">Українська</option>
+        <option value="en">English</option>
+      </select>
     </div>
-
-    <button id="save">Зберегти налаштування</button>
-    <div id="status" class="status">Налаштування збережено!</div>
+    <div class="field">
+      <label id="l-def">Default Translation Language:</label>
+      <select id="defLang">
+        <option value="uk">Українська</option>
+        <option value="en">English</option>
+        <option value="pl">Polski</option>
+        <option value="de">Deutsch</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Google Cloud API Key:</label>
+      <input type="password" id="apiKey" placeholder="AIza...">
+    </div>
+    <button id="save">Save</button>
+    <div id="status">Saved!</div>
   </div>
   <script src="options.js"></script>
 </body>
