@@ -2,13 +2,13 @@
 
 A simple and elegant Chrome extension that translates selected text to multiple languages with a draggable, minimalistic dictionary panel.
 
-![Extension Screenshot](screenshot.png)
+![Extension Screenshot](image_1.png)
 
 *The extension in action showing the dictionary panel with translations between English and Ukrainian, including language detection badges and audio pronunciation buttons.*
 
 ## Features
 
-![Dictionary Panel](screenshot.png)
+![Dictionary Panel](image_1.png)
 
 ### 🌐 Universal Translation
 - **Web Pages**: Works on any website
