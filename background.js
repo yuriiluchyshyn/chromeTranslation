@@ -1,5 +1,4 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // 1. ПЕРЕКЛАД GOOGLE (Free)
   if (request.action === 'translateText') {
     chrome.storage.sync.get(['fromLang', 'toLang'], (settings) => {
       const sl = settings.fromLang === 'auto' ? 'auto' : (settings.fromLang || 'auto');
@@ -19,7 +18,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; 
   }
 
-  // 2. ОЗВУЧЕННЯ GOOGLE CLOUD AI
   if (request.action === 'speakAI') {
     chrome.storage.sync.get(['googleApiKey'], (res) => {
       const key = res.googleApiKey;
@@ -29,7 +27,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         'pl': { code: 'pl-PL', name: 'pl-PL-Wavenet-A' },
         'uk': { code: 'uk-UA', name: 'uk-UA-Wavenet-A' },
         'en': { code: 'en-US', name: 'en-US-Wavenet-D' },
-        'de': { code: 'de-DE', name: 'de-DE-Wavenet-B' }
+        'de': { code: 'de-DE', name: 'de-DE-Wavenet-B' },
+        'es': { code: 'es-ES', name: 'es-ES-Wavenet-B' } // Іспанська додана сюди
       };
 
       const code = request.langCode.split('-')[0];
