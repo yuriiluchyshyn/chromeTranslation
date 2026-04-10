@@ -257,12 +257,12 @@
     }
 
     const h = document.createElement('div');
+    const isShortText = text.length <= 20; // Define isShortText at the beginning
     
     if (isLoading) {
       const topPos = rect.top + window.pageYOffset - 40;
       h.style.cssText = `position:fixed;z-index:2147483647;background:rgba(0,0,0,0.9);color:white;padding:8px 12px;border-radius:6px;font-size:13px;pointer-events:none;transition:opacity 0.4s;left:${rect.left + window.pageXOffset}px;top:${topPos}px;box-shadow:0 2px 8px rgba(0,0,0,0.3);white-space:nowrap;`;
     } else {
-      const isShortText = text.length <= 20;
       const maxWidth = isShortText ? 200 : Math.min(400, window.innerWidth - 40);
       const estimatedHeight = isShortText ? 30 : Math.ceil(text.length / 40) * 20 + 20;
       const topPos = rect.top + window.pageYOffset - estimatedHeight - 10;
