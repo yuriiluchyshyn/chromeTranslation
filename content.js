@@ -4,7 +4,7 @@
     en: { dict: "Dictionary", clear: "🗑️", stop: "🛑", hint: "Words will appear here", pdfBtn: "📂 Open in AI Reader" }
   };
 
-  let state = { panel: null, translations: [], isEnabled: false, uiLang: 'uk', toLang: 'uk', storageLoaded: false };
+  let state = { panel: null, translations: [], isEnabled: false, uiLang: 'uk', toLang: 'uk', storageLoaded: false, showHints: true };
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === 'audio_ended') {
@@ -41,39 +41,46 @@
     }, 100);
   }
 
-  chrome.storage.sync.get(['translationsArray', 'translatorEnabled', 'uiLang', 'toLang'], function (res) {
+  chrome.storage.sync.get(['translationsArray', 'translatorEnabled', 'uiLang', 'toLang', 'showHints'], function (res) {
     if (chrome.runtime.lastError || !chrome.runtime.id) return;
     state.translations = res.translationsArray || [];
     state.isEnabled = res.translatorEnabled !== false;
     state.uiLang = res.uiLang || 'uk';
     state.toLang = res.toLang || 'uk';
+    state.showHints = res.showHints !== false;
     state.storageLoaded = true; // Mark that storage has been loaded
     if (!isPdf || isOurReader) { createPanel(); setupSelectionHandler(); }
   });
 
   // Listen for storage changes to update the enabled state
   chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'sync' && changes.translatorEnabled) {
-      state.isEnabled = changes.translatorEnabled.newValue !== false;
-      
-      // Hide panel if translator is disabled
-      if (!state.isEnabled && state.panel) {
-        state.panel.style.display = 'none';
+    if (namespace === 'sync') {
+      if (changes.translatorEnabled) {
+        state.isEnabled = changes.translatorEnabled.newValue !== false;
+        
+        // Hide panel if translator is disabled
+        if (!state.isEnabled && state.panel) {
+          state.panel.style.display = 'none';
+        }
+        
+        // Update PDF button visibility if on PDF page
+        if (isPdf && !isOurReader) {
+          const existingBtn = document.getElementById('tr-pdf-float-btn');
+          if (!state.isEnabled && existingBtn) {
+            existingBtn.remove();
+          } else if (state.isEnabled && !existingBtn) {
+            const b = document.createElement('button');
+            b.id = 'tr-pdf-float-btn';
+            b.innerHTML = i18n.uk.pdfBtn;
+            b.style.cssText = `position:fixed!important;top:70px!important;right:10px!important;z-index:2147483647!important;background:rgba(26, 115, 232, 0.8)!important;color:white!important;border:1px solid rgba(255,255,255,0.2)!important;padding:8px 14px!important;border-radius:6px!important;cursor:pointer!important;font-weight:500!important;font-family:system-ui,sans-serif!important;font-size:13px!important;box-shadow:0 2px 10px rgba(0,0,0,0.1)!important;backdrop-filter:blur(4px);`;
+            b.onclick = () => chrome.runtime.sendMessage({ action: 'openPdfReader', pdfUrl: window.location.href });
+            (document.documentElement || document.body).appendChild(b);
+          }
+        }
       }
       
-      // Update PDF button visibility if on PDF page
-      if (isPdf && !isOurReader) {
-        const existingBtn = document.getElementById('tr-pdf-float-btn');
-        if (!state.isEnabled && existingBtn) {
-          existingBtn.remove();
-        } else if (state.isEnabled && !existingBtn) {
-          const b = document.createElement('button');
-          b.id = 'tr-pdf-float-btn';
-          b.innerHTML = i18n.uk.pdfBtn;
-          b.style.cssText = `position:fixed!important;top:70px!important;right:10px!important;z-index:2147483647!important;background:rgba(26, 115, 232, 0.8)!important;color:white!important;border:1px solid rgba(255,255,255,0.2)!important;padding:8px 14px!important;border-radius:6px!important;cursor:pointer!important;font-weight:500!important;font-family:system-ui,sans-serif!important;font-size:13px!important;box-shadow:0 2px 10px rgba(0,0,0,0.1)!important;backdrop-filter:blur(4px);`;
-          b.onclick = () => chrome.runtime.sendMessage({ action: 'openPdfReader', pdfUrl: window.location.href });
-          (document.documentElement || document.body).appendChild(b);
-        }
+      if (changes.showHints) {
+        state.showHints = changes.showHints.newValue !== false;
       }
     }
   });
@@ -201,11 +208,16 @@
     if (existing) {
       state.translations = [existing, ...state.translations.filter(i => i.orig !== text)];
       save(); 
-      // Small delay to ensure hint shows properly
-      setTimeout(() => showHint(existing.trans, rect), 100);
+      // Show hint only if showHints is enabled
+      if (state.showHints) {
+        setTimeout(() => showHint(existing.trans, rect), 100);
+      }
     } else {
-      // Show loading hint immediately for new translations
-      const loadingHint = showLoadingHint(rect);
+      // Show loading hint immediately for new translations (only if showHints is enabled)
+      let loadingHint = null;
+      if (state.showHints) {
+        loadingHint = showLoadingHint(rect);
+      }
       
       state.translations.unshift({ orig: text, trans: "...", fromLang: "auto", toLang: state.toLang });
       renderList();
@@ -220,8 +232,10 @@
         if (item && res) {
           item.trans = res.translation; item.fromLang = res.detectedLang;
           item.actualToLang = res.targetLang || state.toLang; save();
-          // Show translation hint after loading is complete
-          setTimeout(() => showHint(res.translation, rect), 500);
+          // Show translation hint after loading is complete (only if showHints is enabled)
+          if (state.showHints) {
+            setTimeout(() => showHint(res.translation, rect), 500);
+          }
         }
       });
     }
@@ -243,7 +257,19 @@
     }
 
     const h = document.createElement('div');
-    h.style.cssText = `position:fixed;z-index:2147483647;background:rgba(0,0,0,0.85);color:white;padding:8px 12px;border-radius:8px;font-size:14px;pointer-events:none;transform:translate(-50%,-100%);transition:opacity 0.4s;left:${rect.left + rect.width / 2 + window.pageXOffset}px;top:${rect.top + window.pageYOffset}px;max-width:300px;word-wrap:break-word;`;
+    
+    if (isLoading) {
+      const topPos = rect.top + window.pageYOffset - 40;
+      h.style.cssText = `position:fixed;z-index:2147483647;background:rgba(0,0,0,0.9);color:white;padding:8px 12px;border-radius:6px;font-size:13px;pointer-events:none;transition:opacity 0.4s;left:${rect.left + window.pageXOffset}px;top:${topPos}px;box-shadow:0 2px 8px rgba(0,0,0,0.3);white-space:nowrap;`;
+    } else {
+      const isShortText = text.length <= 20;
+      const maxWidth = isShortText ? 200 : Math.min(400, window.innerWidth - 40);
+      const estimatedHeight = isShortText ? 30 : Math.ceil(text.length / 40) * 20 + 20;
+      const topPos = rect.top + window.pageYOffset - estimatedHeight - 10;
+      const finalTopPos = topPos < window.pageYOffset + 10 ? rect.bottom + window.pageYOffset + 10 : topPos;
+      
+      h.style.cssText = `position:fixed;z-index:2147483647;background:rgba(0,0,0,0.9);color:white;padding:6px 8px;border-radius:6px;font-size:13px;pointer-events:auto;transition:opacity 0.4s;left:${rect.left + window.pageXOffset}px;top:${finalTopPos}px;max-width:${maxWidth}px;word-wrap:break-word;line-height:1.3;box-shadow:0 2px 8px rgba(0,0,0,0.3);${isShortText ? 'white-space:nowrap;' : ''}`;
+    }
     
     if (isLoading) {
       // Show loading animation with dots
@@ -258,17 +284,32 @@
         </div>
       `;
     } else {
-      h.textContent = text;
+      h.innerHTML = `
+        <button onclick="this.parentElement.remove()" style="position:absolute;top:2px;right:4px;background:rgba(255,255,255,0.2);border:none;color:white;cursor:pointer;font-size:14px;width:16px;height:16px;border-radius:2px;display:flex;align-items:center;justify-content:center;z-index:10;">×</button>
+        <div style="padding-right:${isShortText ? '18px' : '20px'};">${escapeHTML(text)}</div>
+      `;
+      h.style.pointerEvents = 'auto'; // Enable pointer events for the close button
     }
     
     document.documentElement.appendChild(h);
     
     if (!isLoading) {
-      // Calculate display time based on text length (minimum 2 seconds, +100ms per character, max 10 seconds)
-      const baseTime = 2000; // 2 seconds minimum
-      const timePerChar = 100; // 100ms per character
-      const maxTime = 10000; // 10 seconds maximum
-      const displayTime = Math.min(maxTime, baseTime + (text.length * timePerChar));
+      // Better timing calculation - increased times for better readability
+      const wordCount = text.split(/\s+/).length;
+      let displayTime;
+      
+      if (wordCount === 1) {
+        // Single word: 3-6 seconds (increased from 1.5-3)
+        displayTime = Math.min(6000, 3000 + (text.length * 100));
+      } else if (wordCount <= 3) {
+        // Short phrases: 4-8 seconds (increased from 2-4)
+        displayTime = Math.min(8000, 4000 + (text.length * 120));
+      } else {
+        // Longer text: 6-20 seconds (increased from 3-12)
+        const baseTime = 6000;
+        const timePerWord = 600; // 600ms per word (increased from 400ms)
+        displayTime = Math.min(20000, baseTime + (wordCount * timePerWord));
+      }
       
       setTimeout(() => { 
         h.style.opacity = '0'; 

@@ -5,7 +5,7 @@ const i18n = {
 
 document.addEventListener('DOMContentLoaded', () => {
   // 1. Завантажуємо налаштування та оновлюємо інтерфейс
-  chrome.storage.sync.get(['translatorEnabled', 'fromLang', 'toLang', 'uiLang'], (res) => {
+  chrome.storage.sync.get(['translatorEnabled', 'fromLang', 'toLang', 'uiLang', 'showHints'], (res) => {
     const ui = res.uiLang || 'uk';
     const t = i18n[ui];
 
@@ -24,23 +24,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('toggle-translator');
     const langFrom = document.getElementById('lang-from');
     const langTo = document.getElementById('lang-to');
+    const showHints = document.getElementById('show-hints');
 
     if (toggle) toggle.checked = res.translatorEnabled !== false;
     if (langFrom) langFrom.value = res.fromLang || 'auto'; 
     if (langTo) langTo.value = res.toLang || 'uk';
+    if (showHints) showHints.checked = res.showHints !== false;
 
     // Збереження налаштувань при зміні
     const save = () => {
       chrome.storage.sync.set({
         translatorEnabled: toggle.checked,
         fromLang: langFrom.value,
-        toLang: langTo.value
+        toLang: langTo.value,
+        showHints: showHints.checked
       });
     };
 
     toggle.addEventListener('change', save);
     langFrom.addEventListener('change', save);
     langTo.addEventListener('change', save);
+    showHints.addEventListener('change', save);
   });
 
   // 2. Перевірка наявності PDF та приховування блоку, якщо рідер вже відкритий
