@@ -4,7 +4,7 @@
     en: { dict: "Dictionary", clear: "🗑️", stop: "🛑", hint: "Words will appear here", pdfBtn: "📂 Open in AI Reader" }
   };
 
-  let state = { panel: null, translations: [], isEnabled: true, uiLang: 'uk', toLang: 'uk' };
+  let state = { panel: null, translations: [], isEnabled: false, uiLang: 'uk', toLang: 'uk', storageLoaded: false };
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === 'audio_ended') {
@@ -18,8 +18,8 @@
 
   if (isPdf && !isOurReader) {
     const showBtn = () => {
-      if (!state.isEnabled) {
-        // Remove button if translator is disabled
+      if (!state.storageLoaded || !state.isEnabled) {
+        // Remove button if translator is disabled or storage not loaded
         const existingBtn = document.getElementById('tr-pdf-float-btn');
         if (existingBtn) existingBtn.remove();
         return;
@@ -47,6 +47,7 @@
     state.isEnabled = res.translatorEnabled !== false;
     state.uiLang = res.uiLang || 'uk';
     state.toLang = res.toLang || 'uk';
+    state.storageLoaded = true; // Mark that storage has been loaded
     if (!isPdf || isOurReader) { createPanel(); setupSelectionHandler(); }
   });
 
@@ -169,42 +170,117 @@
   }
 
   function setupSelectionHandler() {
+    // Handle text selection on mouseup
     document.addEventListener('mouseup', (e) => {
-      if (!state.isEnabled || (state.panel && state.panel.contains(e.target))) return;
+      if (!state.storageLoaded || !state.isEnabled || (state.panel && state.panel.contains(e.target))) return;
       setTimeout(() => {
         const sel = window.getSelection().toString().trim();
         if (sel.length > 1) processText(sel, window.getSelection().getRangeAt(0).getBoundingClientRect());
       }, 10);
     });
+
+    // Handle double-click for better word selection
+    document.addEventListener('dblclick', (e) => {
+      if (!state.storageLoaded || !state.isEnabled || (state.panel && state.panel.contains(e.target))) return;
+      setTimeout(() => {
+        const sel = window.getSelection().toString().trim();
+        if (sel.length > 0) {
+          const range = window.getSelection().getRangeAt(0);
+          processText(sel, range.getBoundingClientRect());
+        }
+      }, 50); // Slightly longer delay for double-click
+    });
   }
 
   function processText(text, rect) {
-    if (!state.isEnabled) return; // Don't process if translator is disabled
+    if (!state.storageLoaded || !state.isEnabled) return; // Don't process if translator is disabled or storage not loaded
     
     if (!state.panel) createPanel();
     state.panel.style.display = 'flex';
     const existing = state.translations.find(i => i.orig === text);
     if (existing) {
       state.translations = [existing, ...state.translations.filter(i => i.orig !== text)];
-      save(); showHint(existing.trans, rect);
+      save(); 
+      // Small delay to ensure hint shows properly
+      setTimeout(() => showHint(existing.trans, rect), 100);
     } else {
+      // Show loading hint immediately for new translations
+      const loadingHint = showLoadingHint(rect);
+      
       state.translations.unshift({ orig: text, trans: "...", fromLang: "auto", toLang: state.toLang });
       renderList();
       chrome.runtime.sendMessage({ action: 'translateText', text }, (res) => {
+        // Remove loading hint
+        if (loadingHint) {
+          loadingHint.style.opacity = '0';
+          setTimeout(() => loadingHint.remove(), 400);
+        }
+        
         const item = state.translations.find(i => i.orig === text);
         if (item && res) {
           item.trans = res.translation; item.fromLang = res.detectedLang;
           item.actualToLang = res.targetLang || state.toLang; save();
+          // Show translation hint after loading is complete
+          setTimeout(() => showHint(res.translation, rect), 500);
         }
       });
     }
   }
 
-  function showHint(text, rect) {
+  function showHint(text, rect, isLoading = false) {
+    // Add global styles for loading animation if not already added
+    if (!document.getElementById('tr-global-styles')) {
+      const style = document.createElement('style');
+      style.id = 'tr-global-styles';
+      style.textContent = `
+        @keyframes tr-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        .tr-loading-dots { display: inline-flex; gap: 2px; align-items: center; height: 14px; }
+        .tr-dot { width: 4px; height: 4px; background: white; border-radius: 50%; animation: tr-float 1s infinite ease-in-out; }
+        .tr-dot:nth-child(2) { animation-delay: 0.2s; }
+        .tr-dot:nth-child(3) { animation-delay: 0.4s; }
+      `;
+      document.head.appendChild(style);
+    }
+
     const h = document.createElement('div');
-    h.style.cssText = `position:fixed;z-index:2147483647;background:rgba(0,0,0,0.85);color:white;padding:8px 12px;border-radius:8px;font-size:14px;pointer-events:none;transform:translate(-50%,-100%);transition:opacity 0.4s;left:${rect.left + rect.width / 2 + window.pageXOffset}px;top:${rect.top + window.pageYOffset}px;`;
-    h.textContent = text; document.documentElement.appendChild(h);
-    setTimeout(() => { h.style.opacity = '0'; setTimeout(() => h.remove(), 400); }, 3000);
+    h.style.cssText = `position:fixed;z-index:2147483647;background:rgba(0,0,0,0.85);color:white;padding:8px 12px;border-radius:8px;font-size:14px;pointer-events:none;transform:translate(-50%,-100%);transition:opacity 0.4s;left:${rect.left + rect.width / 2 + window.pageXOffset}px;top:${rect.top + window.pageYOffset}px;max-width:300px;word-wrap:break-word;`;
+    
+    if (isLoading) {
+      // Show loading animation with dots
+      h.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span>Перекладаю...</span>
+          <div class="tr-loading-dots">
+            <div class="tr-dot"></div>
+            <div class="tr-dot"></div>
+            <div class="tr-dot"></div>
+          </div>
+        </div>
+      `;
+    } else {
+      h.textContent = text;
+    }
+    
+    document.documentElement.appendChild(h);
+    
+    if (!isLoading) {
+      // Calculate display time based on text length (minimum 2 seconds, +100ms per character, max 10 seconds)
+      const baseTime = 2000; // 2 seconds minimum
+      const timePerChar = 100; // 100ms per character
+      const maxTime = 10000; // 10 seconds maximum
+      const displayTime = Math.min(maxTime, baseTime + (text.length * timePerChar));
+      
+      setTimeout(() => { 
+        h.style.opacity = '0'; 
+        setTimeout(() => h.remove(), 400); 
+      }, displayTime);
+    }
+    
+    return h; // Return element so it can be controlled externally
+  }
+
+  function showLoadingHint(rect) {
+    return showHint('', rect, true);
   }
 
   function save() { chrome.storage.sync.set({ translationsArray: state.translations }); renderList(); }
