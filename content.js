@@ -1,10 +1,10 @@
 (function () {
   const i18n = {
-    uk: { dict: "Словник", clear: "🗑️", stop: "🛑", hint: "Тут з’являться слова", pdfBtn: "📂 Відкрити в AI-рідері" },
-    en: { dict: "Dictionary", clear: "🗑️", stop: "🛑", hint: "Words will appear here", pdfBtn: "📂 Open in AI Reader" }
+    uk: { dict: "Словник", clear: "🗑️", stop: "🛑", hint: "Тут з'являться слова", pdfBtn: "📂 Відкрити в AI-рідері", pause: "⏸️", play: "▶️", speed: "Швидкість" },
+    en: { dict: "Dictionary", clear: "🗑️", stop: "🛑", hint: "Words will appear here", pdfBtn: "📂 Open in AI Reader", pause: "⏸️", play: "▶️", speed: "Speed" }
   };
 
-  let state = { panel: null, translations: [], isEnabled: false, uiLang: 'uk', toLang: 'uk', storageLoaded: false, showHints: true };
+  let state = { panel: null, translations: [], isEnabled: false, uiLang: 'uk', toLang: 'uk', storageLoaded: false, showHints: true, audioSpeed: 1, isAudioPaused: false, currentAudioElement: null };
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === 'audio_ended') {
@@ -41,13 +41,14 @@
     }, 100);
   }
 
-  chrome.storage.sync.get(['translationsArray', 'translatorEnabled', 'uiLang', 'toLang', 'showHints'], function (res) {
+  chrome.storage.sync.get(['translationsArray', 'translatorEnabled', 'uiLang', 'toLang', 'showHints', 'audioSpeed'], function (res) {
     if (chrome.runtime.lastError || !chrome.runtime.id) return;
     state.translations = res.translationsArray || [];
     state.isEnabled = res.translatorEnabled !== false;
     state.uiLang = res.uiLang || 'uk';
     state.toLang = res.toLang || 'uk';
     state.showHints = res.showHints !== false;
+    state.audioSpeed = res.audioSpeed || 1;
     state.storageLoaded = true; // Mark that storage has been loaded
     if (!isPdf || isOurReader) { createPanel(); setupSelectionHandler(); }
   });
@@ -82,6 +83,11 @@
       if (changes.showHints) {
         state.showHints = changes.showHints.newValue !== false;
       }
+
+      if (changes.audioSpeed) {
+        state.audioSpeed = changes.audioSpeed.newValue || 1;
+        updateSpeedDisplay();
+      }
     }
   });
 
@@ -89,7 +95,7 @@
     if (document.getElementById('my-translator-panel')) return;
     state.panel = document.createElement('div');
     state.panel.id = 'my-translator-panel';
-    state.panel.style.cssText = `position:fixed;top:20px;right:20px;width:280px;max-height:500px;background:white;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:2147483647;display:none;flex-direction:column;overflow:hidden;font-family:system-ui,sans-serif;border:1px solid #eee;`;
+    state.panel.style.cssText = `position:fixed;top:20px;right:20px;width:300px;max-height:500px;background:white;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:2147483647;display:none;flex-direction:column;overflow:hidden;font-family:system-ui,sans-serif;border:1px solid #eee;`;
 
     const t = i18n[state.uiLang] || i18n.uk;
     state.panel.innerHTML = `
@@ -121,10 +127,76 @@
         .lang-badge { font-size:9px;background:#f0f2f5;padding:2px 4px;border-radius:4px;margin-left:4px;color:#666;text-transform:uppercase;font-weight:bold; }
         .tr-header-btn { border:none; background:none; cursor:pointer; font-size:14px; padding:4px; opacity:0.7; transition:0.2s; }
         .tr-header-btn:hover { opacity:1; transform:scale(1.1); }
+        .tr-speed-dropdown { 
+          position: relative; 
+          display: inline-block; 
+        }
+        .tr-speed-btn { 
+          border:none; 
+          background:rgba(26, 115, 232, 0.1); 
+          cursor:pointer; 
+          font-size:11px; 
+          padding:4px 8px; 
+          opacity:0.8; 
+          transition:0.2s; 
+          border-radius:4px;
+          color:#1a73e8;
+          font-weight:bold;
+          min-width:40px;
+        }
+        .tr-speed-btn:hover { opacity:1; background:rgba(26, 115, 232, 0.2); }
+        .tr-speed-menu { 
+          display:none; 
+          position:absolute; 
+          top:100%; 
+          right:0; 
+          background:white; 
+          border:1px solid #ddd; 
+          border-radius:6px; 
+          box-shadow:0 4px 12px rgba(0,0,0,0.15); 
+          z-index:10; 
+          min-width:100px;
+        }
+        .tr-speed-menu.show { display:block; }
+        .tr-speed-option { 
+          padding:8px 12px; 
+          cursor:pointer; 
+          font-size:12px; 
+          border-bottom:1px solid #f0f2f5; 
+          transition:0.2s;
+        }
+        .tr-speed-option:last-child { border-bottom:none; }
+        .tr-speed-option:hover { background:#f7f8f9; }
+        .tr-speed-option.active { background:#1a73e8; color:white; }
+        .tr-pause-btn { 
+          border:none; 
+          background:none; 
+          cursor:pointer; 
+          font-size:14px; 
+          padding:4px; 
+          opacity:0.7; 
+          transition:0.2s; 
+        }
+        .tr-pause-btn:hover { opacity:1; transform:scale(1.1); }
+        .tr-pause-btn.paused { color:#1a73e8; opacity:1; }
+        .tr-controls { display:flex; align-items:center; gap:4px; }
       </style>
       <div style="background:#f7f8f9;padding:10px 12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;cursor:move;" id="tr-header">
         <strong style="color:black;font-size:14px;">${t.dict}</strong>
-        <div style="display:flex;align-items:center;gap:4px;">
+        <div class="tr-controls">
+          <div class="tr-speed-dropdown">
+            <button id="tr-speed" class="tr-speed-btn" title="${t.speed}">1x</button>
+            <div id="tr-speed-menu" class="tr-speed-menu">
+              <div class="tr-speed-option" data-speed="0.25">0.25x</div>
+              <div class="tr-speed-option" data-speed="0.5">0.5x</div>
+              <div class="tr-speed-option active" data-speed="1">1x</div>
+              <div class="tr-speed-option" data-speed="1.25">1.25x</div>
+              <div class="tr-speed-option" data-speed="1.5">1.5x</div>
+              <div class="tr-speed-option" data-speed="2">2x</div>
+              <div class="tr-speed-option" data-speed="custom">Custom</div>
+            </div>
+          </div>
+          <button id="tr-pause" class="tr-pause-btn tr-header-btn" title="Pause/Resume">${t.play}</button>
           <button id="tr-stop" class="tr-header-btn" title="Stop audio">${t.stop}</button>
           <button id="tr-clear" class="tr-header-btn" title="Clear list">${t.clear}</button>
           <button id="tr-close" style="border:none;background:none;cursor:pointer;font-size:20px;color:#999;line-height:1;margin-left:4px;">×</button>
@@ -139,10 +211,91 @@
     // ЛОГІКА КНОПКИ ЗУПИНКИ
     document.getElementById('tr-stop').onclick = () => {
       chrome.runtime.sendMessage({ action: 'stop_audio_global' });
+      state.isAudioPaused = false;
+      updatePauseButton();
     };
 
+    // ЛОГІКА КНОПКИ ПАУЗИ/ВІДНОВЛЕННЯ
+    document.getElementById('tr-pause').onclick = () => {
+      if (state.isAudioPaused) {
+        // Відновити програвання
+        chrome.runtime.sendMessage({ action: 'resume_audio' });
+        state.isAudioPaused = false;
+      } else {
+        // Поставити на паузу
+        chrome.runtime.sendMessage({ action: 'pause_audio' });
+        state.isAudioPaused = true;
+      }
+      updatePauseButton();
+    };
+
+    // ЛОГІКА МЕНЮ ШВИДКОСТІ
+    const speedBtn = document.getElementById('tr-speed');
+    const speedMenu = document.getElementById('tr-speed-menu');
+    
+    speedBtn.onclick = (e) => {
+      e.stopPropagation();
+      speedMenu.classList.toggle('show');
+    };
+
+    // Закрити меню при кліку поза ним
+    document.addEventListener('click', () => {
+      speedMenu.classList.remove('show');
+    });
+
+    // Обробка вибору швидкості
+    speedMenu.addEventListener('click', (e) => {
+      if (e.target.classList.contains('tr-speed-option')) {
+        const speed = e.target.dataset.speed;
+        if (speed === 'custom') {
+          const customSpeed = prompt('Введіть швидкість (наприклад, 1.25):', state.audioSpeed);
+          if (customSpeed && !isNaN(customSpeed) && customSpeed > 0 && customSpeed <= 4) {
+            setAudioSpeed(parseFloat(customSpeed));
+          }
+        } else {
+          setAudioSpeed(parseFloat(speed));
+        }
+        speedMenu.classList.remove('show');
+      }
+    });
+
+    updateSpeedDisplay();
+    updatePauseButton();
     renderList();
     makeDraggable(document.getElementById('tr-header'), state.panel);
+  }
+
+  function setAudioSpeed(speed) {
+    state.audioSpeed = speed;
+    chrome.storage.sync.set({ audioSpeed: speed });
+    chrome.runtime.sendMessage({ action: 'set_audio_speed', speed: speed });
+    updateSpeedDisplay();
+  }
+
+  function updateSpeedDisplay() {
+    const speedBtn = document.getElementById('tr-speed');
+    const speedMenu = document.getElementById('tr-speed-menu');
+    if (speedBtn) {
+      speedBtn.textContent = state.audioSpeed === 1 ? '1x' : state.audioSpeed + 'x';
+    }
+    if (speedMenu) {
+      // Оновити активний пункт меню
+      speedMenu.querySelectorAll('.tr-speed-option').forEach(option => {
+        option.classList.remove('active');
+        if (parseFloat(option.dataset.speed) === state.audioSpeed) {
+          option.classList.add('active');
+        }
+      });
+    }
+  }
+
+  function updatePauseButton() {
+    const pauseBtn = document.getElementById('tr-pause');
+    const t = i18n[state.uiLang] || i18n.uk;
+    if (pauseBtn) {
+      pauseBtn.innerHTML = state.isAudioPaused ? t.play : t.pause;
+      pauseBtn.classList.toggle('paused', state.isAudioPaused);
+    }
   }
 
   function renderList() {
@@ -172,7 +325,11 @@
       document.querySelectorAll('.tr-speak.playing').forEach(el => el.classList.remove('playing'));
       btn.classList.add('playing');
       const langCode = (btn.dataset.l || 'en').split('-')[0].toLowerCase();
-      chrome.runtime.sendMessage({ action: 'speakAI', text: btn.dataset.t, langCode: langCode });
+      chrome.runtime.sendMessage({ action: 'speakAI', text: btn.dataset.t, langCode: langCode, speed: state.audioSpeed });
+      
+      // Скинути стан паузи коли починається нове відтворення
+      state.isAudioPaused = false;
+      updatePauseButton();
     });
   }
 
@@ -328,7 +485,7 @@
   function escapeHTML(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
   function makeDraggable(header, panel) {
     let drag = false, x, y;
-    header.onmousedown = (e) => { if (e.target.tagName !== 'BUTTON') { drag = true; x = e.clientX - panel.offsetLeft; y = e.clientY - panel.offsetTop; } };
+    header.onmousedown = (e) => { if (e.target.tagName !== 'BUTTON' && !e.target.closest('.tr-speed-dropdown')) { drag = true; x = e.clientX - panel.offsetLeft; y = e.clientY - panel.offsetTop; } };
     document.onmousemove = (e) => { if (drag) { panel.style.left = (e.clientX - x) + 'px'; panel.style.top = (e.clientY - y) + 'px'; panel.style.right = 'auto'; } };
     document.onmouseup = () => drag = false;
   }

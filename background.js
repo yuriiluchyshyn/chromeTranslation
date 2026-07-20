@@ -29,6 +29,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return;
   }
 
+  // ПАУЗА АУДІО
+  if (request.action === 'pause_audio') {
+    setupOffscreen().then(() => {
+      chrome.runtime.sendMessage({ action: 'pause_audio_now' });
+    });
+    return;
+  }
+
+  // ВІДНОВЛЕННЯ АУДІО
+  if (request.action === 'resume_audio') {
+    setupOffscreen().then(() => {
+      chrome.runtime.sendMessage({ action: 'resume_audio_now' });
+    });
+    return;
+  }
+
+  // ВСТАНОВЛЕННЯ ШВИДКОСТІ АУДІО
+  if (request.action === 'set_audio_speed') {
+    setupOffscreen().then(() => {
+      chrome.runtime.sendMessage({ action: 'set_audio_speed_now', speed: request.speed });
+    });
+    return;
+  }
+
   if (request.action === 'speakAI') {
     const currentId = ++lastRequestId; // Фіксуємо цей запит
 
@@ -47,20 +71,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         const code = (request.langCode || 'en').split('-')[0];
         const voice = voiceMap[code] || voiceMap['en'];
+        const speed = request.speed || 1; // Швидкість застосовуємо на рівні відтворення, не синтезу
 
         fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${key}`, {
           method: 'POST',
           body: JSON.stringify({
             input: { text: request.text },
             voice: { languageCode: voice.code, name: voice.name },
-            audioConfig: { audioEncoding: 'MP3', speakingRate: 0.95 }
+            // Синтезуємо завжди з нормальною швидкістю для чистого звуку.
+            // Пришвидшення робимо через playbackRate + preservesPitch в offscreen.
+            audioConfig: { audioEncoding: 'MP3', speakingRate: 1.0 }
           })
         })
           .then(r => r.json())
           .then(data => {
             // ПЕРЕВІРКА: Якщо за цей час користувач не натиснув на інше слово
             if (currentId === lastRequestId && data.audioContent) {
-              chrome.runtime.sendMessage({ action: 'play_audio', data: data.audioContent });
+              chrome.runtime.sendMessage({ action: 'play_audio', data: data.audioContent, speed: speed });
             }
           })
           .catch(() => { });
