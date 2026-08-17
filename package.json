@@ -1,0 +1,21 @@
+{
+  "name": "ai-text-translator-extension",
+  "version": "3.7.0",
+  "description": "Build tools for AI Text Translator Chrome Extension",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-webstore.js",
+    "build:bash": "bash scripts/build-webstore.sh"
+  },
+  "devDependencies": {
+    "archiver": "^7.0.1"
+  },
+  "keywords": [
+    "chrome-extension",
+    "translation",
+    "ai",
+    "webstore"
+  ],
+  "author": "",
+  "license": "MIT"
+}

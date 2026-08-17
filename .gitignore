@@ -1,0 +1,51 @@
+# Chrome Extension Build Files
+webstore-build/
+temp-build/
+*.zip
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Development Files
+*.backup
+*.bak
+*~
+*.tmp
+*.log
+
+# IDE/Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Personal API Keys (if any config files are created)
+config.json
+api-keys.json
+secrets.json
+
+# Build artifacts
+dist/
+build/
+
+# Personal notes
+notes.md
+todo.md
+
+# Keep scripts folder but ignore any generated files in it
+!scripts/
+scripts/webstore-build/
+scripts/temp-build/
+scripts/*.zip

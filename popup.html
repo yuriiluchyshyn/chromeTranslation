@@ -21,6 +21,24 @@
     .select-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 10px; color: #8c939d; pointer-events: none; }
     #pdf-alert { display: none; background: #f0f7ff; color: #0056b3; padding: 12px; border-radius: 12px; font-size: 13px; border: 1px solid #d0e5ff; text-align: center; margin-top: 10px; }
     .btn-primary { background: #007bff; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 5px; font-size: 13px; }
+    .divider { height: 1px; background: #e4e6eb; border: none; margin: 0; }
+    .ai-fields { display: flex; flex-direction: column; gap: 10px; }
+    .ai-fields.hidden { display: none; }
+    .ai-textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #dddfe2; font-size: 12px; font-family: inherit; outline: none; resize: vertical; min-height: 44px; line-height: 1.4; }
+    .ai-textarea:focus { border-color: #007bff; }
+    .hint-text { font-size: 11px; color: #b0b3b8; line-height: 1.3; }
+    .ai-status { display: none; font-size: 12px; line-height: 1.4; padding: 8px 10px; border-radius: 8px; }
+    .ai-status.show { display: block; }
+    .ai-status.error { background: #fdecea; color: #b3261e; border: 1px solid #f7c9c4; }
+    .ai-status.ok { background: #e6f4ea; color: #1e7e34; border: 1px solid #bfe3c9; }
+    #page-warning { display: none; background: #fdecea; color: #b3261e; padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.4; border: 1px solid #f7c9c4; }
+    #page-warning a { color: #b3261e; font-weight: 700; text-decoration: underline; cursor: pointer; }
+    #tts-key-warning { display: none; background: #fef7e0; color: #a56300; padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.4; border: 1px solid #fce8b2; }
+    #tts-key-warning a { color: #a56300; font-weight: 700; text-decoration: underline; cursor: pointer; }
+    #ai-key-hint { display: none; background: #fef7e0; color: #a56300; padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.4; border: 1px solid #fce8b2; }
+    #ai-key-hint a { color: #a56300; font-weight: 700; text-decoration: underline; cursor: pointer; }
+    .ai-toggle-disabled { opacity: 0.5; }
+    input:disabled + .slider { cursor: not-allowed; opacity: 0.7; }
   </style>
 </head>
 <body>
@@ -32,6 +50,14 @@
         <span class="slider"></span>
       </label>
     </div>
+    <div id="page-warning">
+      <span id="page-warning-text"></span>
+      <a id="page-warning-link"></a>
+    </div>
+    <div id="tts-key-warning">
+      <span id="tts-key-warning-text"></span>
+      <a id="tts-key-warning-link"></a>
+    </div>
     <div class="translation-section">
       <span class="sub-label">Напрямок перекладу:</span>
       <div class="language-picker">
@@ -40,9 +66,15 @@
             <option value="auto">Автовизначення</option>
             <option value="en">English</option>
             <option value="uk">Українська</option>
-            <option value="pl">Polski</option>
             <option value="es">Español</option>
             <option value="de">Deutsch</option>
+            <option value="pl">Polski</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+            <option value="pt">Português</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="zh">中文</option>
           </select>
           <span class="select-icon">▼</span>
         </div>
@@ -51,9 +83,15 @@
           <select id="lang-to">
             <option value="uk">Українська</option>
             <option value="en">English</option>
-            <option value="pl">Polski</option>
             <option value="es">Español</option>
             <option value="de">Deutsch</option>
+            <option value="pl">Polski</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+            <option value="pt">Português</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="zh">中文</option>
           </select>
           <span class="select-icon">▼</span>
         </div>
@@ -64,6 +102,48 @@
         <input type="checkbox" id="show-hints" checked style="margin: 0;">
         <span class="sub-label" style="margin: 0;">Показувати переклад над текстом</span>
       </label>
+    </div>
+    <hr class="divider">
+    <div class="translation-section">
+      <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+        <span class="sub-label" id="ai-label" style="margin: 0;">AI-переклад (Gemini)</span>
+        <span class="switch" style="flex: none;">
+          <input type="checkbox" id="ai-enabled">
+          <span class="slider"></span>
+        </span>
+      </label>
+    </div>
+    <div class="translation-section">
+      <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+        <span class="sub-label" id="ai-reading-label" style="margin: 0;">AI-читання (Gemini)</span>
+        <span class="switch" style="flex: none;">
+          <input type="checkbox" id="ai-reading-enabled">
+          <span class="slider"></span>
+        </span>
+      </label>
+    </div>
+    <div id="ai-key-hint">
+      <span id="ai-key-hint-text"></span>
+      <a id="ai-key-hint-link"></a>
+    </div>
+    <div class="ai-fields hidden" id="ai-fields">
+      <div class="ai-status" id="ai-status"></div>
+      <div class="translation-section">
+        <span class="sub-label" id="ai-style-label">Стиль перекладу:</span>
+        <div class="select-wrapper">
+          <select id="ai-style">
+            <option value="standard">Стандартний</option>
+            <option value="software_engineer">Software Engineer</option>
+            <option value="solution_architect">Solution Architect</option>
+          </select>
+          <span class="select-icon">▼</span>
+        </div>
+      </div>
+      <div class="translation-section" id="ai-prompt-section">
+        <span class="sub-label" id="ai-prompt-label">Інструкція для перекладу:</span>
+        <textarea class="ai-textarea" id="ai-prompt" rows="3" placeholder="Напр.: Ти перекладаєш технічну літературу для solution architect. Зберігай точність термінів."></textarea>
+      </div>
+      <span class="hint-text" id="ai-hint">Використовує Google API-ключ із налаштувань. Якщо ключ не задано або сталася помилка — переклад виконає Google Translate.</span>
     </div>
     <div id="pdf-alert">
       <span style="font-weight:700; display:block; margin-bottom:5px;" id="pdf-title">📄 PDF Detected</span>
