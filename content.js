@@ -93,6 +93,8 @@
     audioSpeed: CONFIG.AUDIO_SPEED.DEFAULT, 
     isAudioPaused: false, 
     currentAudioElement: null,
+    activeSpeakBtn: null,
+    speakLoadingTimer: null,
     initialized: false,
     pdfButtonCreated: false,
     pdfButtonCreating: false,
@@ -569,8 +571,17 @@
         });
         return true;
       }
+      if (msg.action === 'audio_started') {
+        if (state.activeSpeakBtn) setSpeakPlaying(state.activeSpeakBtn);
+        return;
+      }
       if (msg.action === 'audio_ended') {
-        document.querySelectorAll('.tr-speak.playing').forEach(el => el.classList.remove('playing'));
+        stopSpeakPlayingVisual();
+        return;
+      }
+      if (msg.action === 'audio_failed') {
+        clearSpeakStates();
+        return;
       }
     } catch (error) {
       console.warn('Translator: Error handling runtime message:', error);
@@ -845,11 +856,13 @@
     try {
       // Inject CSS styles once using CSS manager
       const panelCSS = `
-        @keyframes tr-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-        .tr-loading-dots { display: inline-flex; gap: 2px; align-items: center; height: 14px; }
-        .tr-dot { width: 4px; height: 4px; background: #1a73e8; border-radius: 50%; animation: tr-float 1s infinite ease-in-out; }
-        .tr-dot:nth-child(2) { animation-delay: 0.2s; }
-        .tr-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes tr-bounce { 0%, 80%, 100% { transform: scale(0.4); opacity: 0.35; } 40% { transform: scale(1); opacity: 1; } }
+        .tr-loading-dots { display: inline-flex; gap: 4px; align-items: center; height: 16px; }
+        .tr-dot { width: 6px; height: 6px; border-radius: 50%; animation: tr-bounce 1.4s infinite ease-in-out both; }
+        #my-translator-panel .tr-dot { background: #1a73e8; }
+        .tr-dot:nth-child(1) { animation-delay: -0.32s; }
+        .tr-dot:nth-child(2) { animation-delay: -0.16s; }
+        .tr-dot:nth-child(3) { animation-delay: 0s; }
 
         .tr-speak { 
           background:none!important; border:none!important; cursor:pointer!important; 
@@ -859,11 +872,22 @@
           border-radius: 50%; color: #888;
         }
         .tr-speak:hover { opacity:1; background: rgba(0,0,0,0.05)!important; }
+        @keyframes tr-heartbeat {
+          0% { transform: scale(1); }
+          15% { transform: scale(1.28); }
+          30% { transform: scale(1); }
+          45% { transform: scale(1.18); }
+          60%, 100% { transform: scale(1); }
+        }
         .tr-speak.playing { 
           opacity:1!important; color:#1a73e8!important; 
           background: rgba(26, 115, 232, 0.1) !important;
           box-shadow: 0 0 6px rgba(26, 115, 232, 0.1), 0 0 3px rgba(26, 115, 232, 0.2);
+          animation: tr-heartbeat 1.1s infinite ease-in-out;
         }
+        .tr-speak.loading { opacity:1!important; background: rgba(26, 115, 232, 0.08)!important; }
+        .tr-speak .tr-loading-dots { gap:3px; height:12px; }
+        .tr-speak .tr-dot { width:4px; height:4px; }
         
         .lang-badge { font-size:9px;background:#f0f2f5;padding:2px 4px;border-radius:4px;margin-left:4px;color:#666;text-transform:uppercase;font-weight:bold; }
         .tr-header-btn { border:none; background:none; cursor:pointer; font-size:14px; padding:4px; opacity:0.7; transition:0.2s; }
@@ -1080,6 +1104,62 @@
     }
   }
 
+  // --- Стани іконки озвучення (🔊): loading (три крапки) → playing (пульс) ---
+  const SPEAK_ICON = '🔊';
+
+  function clearSpeakTimer() {
+    if (state.speakLoadingTimer) {
+      clearTimeout(state.speakLoadingTimer);
+      state.speakLoadingTimer = null;
+    }
+  }
+
+  // Знімає стани з усіх кнопок озвучення і повертає звичайну іконку.
+  function clearSpeakStates() {
+    clearSpeakTimer();
+    document.querySelectorAll('.tr-speak').forEach(el => {
+      el.classList.remove('playing', 'loading');
+      el.innerHTML = SPEAK_ICON;
+    });
+    state.activeSpeakBtn = null;
+  }
+
+  // Показує три крапки, поки завантажується озвучка (аналогічно перекладу).
+  function setSpeakLoading(btn) {
+    state.activeSpeakBtn = btn;
+    btn.classList.remove('playing');
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="tr-loading-dots"><span class="tr-dot"></span><span class="tr-dot"></span><span class="tr-dot"></span></span>';
+    // Підстраховка: якщо озвучка не почнеться (помилка TTS/немає ключа) —
+    // прибираємо стан завантаження, щоб кнопка не «зависла» на крапках.
+    clearSpeakTimer();
+    state.speakLoadingTimer = setTimeout(() => {
+      if (state.activeSpeakBtn === btn && btn.classList.contains('loading')) {
+        clearSpeakStates();
+      }
+    }, 15000);
+  }
+
+  // Перемикає кнопку в режим відтворення: пульс «як серце».
+  function setSpeakPlaying(btn) {
+    clearSpeakTimer();
+    btn.classList.remove('loading');
+    btn.classList.add('playing');
+    btn.innerHTML = SPEAK_ICON;
+  }
+
+  // Знімає лише «пульс» із кнопок, що грали (природне завершення чи зупинка).
+  // Кнопки в стані «loading» не чіпаємо — це щойно запущене нове озвучення.
+  function stopSpeakPlayingVisual() {
+    document.querySelectorAll('.tr-speak.playing').forEach(el => {
+      el.classList.remove('playing');
+      el.innerHTML = SPEAK_ICON;
+    });
+    if (state.activeSpeakBtn && !state.activeSpeakBtn.classList.contains('loading')) {
+      state.activeSpeakBtn = null;
+    }
+  }
+
   function renderList() {
     const list = domUtils.getElementById('tr-list');
     if (!list) return;
@@ -1122,8 +1202,8 @@
         try {
           const btn = e.currentTarget;
           safeChromeAPI.sendMessage({ action: 'stop_audio_global' });
-          document.querySelectorAll('.tr-speak.playing').forEach(el => el.classList.remove('playing'));
-          btn.classList.add('playing');
+          clearSpeakStates();
+          setSpeakLoading(btn);
           const langCode = (btn.dataset.l || 'en').split('-')[0].toLowerCase();
           safeChromeAPI.sendMessage({ 
             action: 'speakAI', 
@@ -1304,23 +1384,27 @@
   function showHint(text, rect, isLoading = false) {
     // Inject global styles for loading animation using CSS manager
     const globalCSS = `
-      @keyframes tr-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-      .tr-loading-dots { display: inline-flex; gap: 2px; align-items: center; height: 14px; }
-      .tr-dot { width: 4px; height: 4px; background: white; border-radius: 50%; animation: tr-float 1s infinite ease-in-out; }
-      .tr-dot:nth-child(2) { animation-delay: 0.2s; }
-      .tr-dot:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes tr-bounce { 0%, 80%, 100% { transform: scale(0.4); opacity: 0.35; } 40% { transform: scale(1); opacity: 1; } }
+      .tr-loading-dots { display: inline-flex; gap: 4px; align-items: center; height: 16px; }
+      .tr-dot { width: 6px; height: 6px; border-radius: 50%; animation: tr-bounce 1.4s infinite ease-in-out both; }
+      .tr-hint .tr-dot { background: #fff; }
+      .tr-dot:nth-child(1) { animation-delay: -0.32s; }
+      .tr-dot:nth-child(2) { animation-delay: -0.16s; }
+      .tr-dot:nth-child(3) { animation-delay: 0s; }
     `;
     
     cssManager.injectOnce('tr-global-styles', globalCSS);
 
     const h = document.createElement('div');
+    h.className = 'tr-hint';
     
     let content, dimensions, position;
     
     if (isLoading) {
+      const loadingLabel = ((i18n[state.uiLang] || i18n.uk).translating || 'Translating...').replace(/\.+$/, '');
       content = `
         <div style="display:flex;align-items:center;gap:8px;">
-          <span>Перекладаю...</span>
+          <span>${escapeHTML(loadingLabel)}</span>
           <div class="tr-loading-dots">
             <div class="tr-dot"></div>
             <div class="tr-dot"></div>
@@ -1328,7 +1412,7 @@
           </div>
         </div>
       `;
-      dimensions = { width: 150, height: 40 };
+      dimensions = { width: 160, height: 40 };
     } else {
       const isShortText = text.length <= 20;
       dimensions = positionUtils.getEstimatedDimensions(text, isShortText);

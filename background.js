@@ -328,6 +328,15 @@ async function setupOffscreen() {
   }
 }
 
+// Розсилає повідомлення про стан озвучення всім вкладкам (для підсвітки іконки 🔊).
+function broadcastToTabs(action) {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach(tab => {
+      chrome.tabs.sendMessage(tab.id, { action }).catch(() => { });
+    });
+  });
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Повертає список Gemini-моделей, що підтримують generateContent (для дропдауна в налаштуваннях).
   if (request.action === 'listGeminiModels') {
@@ -366,11 +375,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'audio_ended_internal') {
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach(tab => {
-        chrome.tabs.sendMessage(tab.id, { action: 'audio_ended' }).catch(() => { });
-      });
-    });
+    broadcastToTabs('audio_ended');
+    return;
+  }
+
+  // Озвучка реально почала грати — вмикаємо «пульс» на іконці.
+  if (request.action === 'audio_started_internal') {
+    broadcastToTabs('audio_started');
     return;
   }
 
@@ -433,6 +444,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch((err) => {
               console.warn('[TTS] Gemini TTS помилка:', err.status || '', err.message);
               setTtsStatus({ code: 'error', status: err.status || 0, message: err.message || '' });
+              broadcastToTabs('audio_failed'); // зняти «завантаження» з іконки
             });
         } else if (!res.aiReadingEnabled && res.cloudTtsApiKey) {
           console.log('[TTS] Рушій: Cloud Text-to-Speech (AI reading вимкнено)');
@@ -446,12 +458,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch((err) => {
               console.warn('[TTS] Cloud TTS помилка:', err.status || '', err.message);
               setTtsStatus({ code: 'error', status: err.status || 0, message: err.message || '' });
+              broadcastToTabs('audio_failed'); // зняти «завантаження» з іконки
             });
         } else {
           // Відсутні необхідні ключі
           const missing = res.aiReadingEnabled ? 'Gemini API-ключ' : 'Cloud TTS API-ключ';
           console.warn(`[TTS] ${missing} відсутній — озвучення недоступне`);
           setTtsStatus({ code: 'no_key', message: `${missing} не налаштовано` });
+          broadcastToTabs('audio_failed'); // зняти «завантаження» з іконки
         }
       });
     });

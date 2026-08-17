@@ -77,6 +77,8 @@ chrome.runtime.onMessage.addListener((request) => {
     };
     currentAudio.onended = cleanup;
     currentAudio.onerror = cleanup;
+    // Реально почалося відтворення — сигналимо, щоб увімкнути «пульс» на іконці.
+    currentAudio.onplaying = () => chrome.runtime.sendMessage({ action: 'audio_started_internal' });
 
     currentAudio.play()
       .then(() => applyPlaybackRate(currentAudio, currentSpeed))
@@ -104,6 +106,9 @@ chrome.runtime.onMessage.addListener((request) => {
       chrome.runtime.sendMessage({ action: 'audio_ended_internal' });
       currentAudio = null;
     };
+
+    // Реально почалося відтворення — сигналимо, щоб увімкнути «пульс» на іконці.
+    currentAudio.onplaying = () => chrome.runtime.sendMessage({ action: 'audio_started_internal' });
 
     currentAudio.play().then(() => {
       // Дублюємо застосування швидкості після старту (деякі браузери скидають її)
