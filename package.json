@@ -1,6 +1,6 @@
 {
   "name": "ai-text-translator-extension",
-  "version": "3.7.0",
+  "version": "3.8.0",
   "description": "Build tools for AI Text Translator Chrome Extension",
   "private": true,
   "scripts": {

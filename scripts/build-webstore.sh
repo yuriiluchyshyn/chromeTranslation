@@ -49,7 +49,7 @@ cp offscreen.html "$TEMP_DIR/"
 cp offscreen.js "$TEMP_DIR/"
 
 # Copy icons directory
-cp -r icons/ "$TEMP_DIR/"
+cp -r icons "$TEMP_DIR/"
 
 # Copy PDF.js directory (needed for PDF support)
 echo -e "${BLUE}📄 Copying PDF.js viewer...${NC}"

@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const focusTts = params.get('section') === 'tts';
 
   chrome.storage.local.get(['uiLang'], (res) => {
-    const lang = i18n[res.uiLang] ? res.uiLang : 'uk';
+    const lang = i18n[res.uiLang] ? res.uiLang : 'en';
     langSelect.value = lang;
     render(lang);
     if (focusTts) {

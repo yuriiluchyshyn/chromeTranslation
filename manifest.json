@@ -1,11 +1,10 @@
 {
   "manifest_version": 3,
   "name": "AI Text Translator",
-  "version": "3.7",
+  "version": "3.9",
   "permissions": [
     "storage",
     "activeTab",
-    "scripting",
     "tabs",
     "offscreen"
   ],

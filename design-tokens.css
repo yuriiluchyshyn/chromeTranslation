@@ -1,0 +1,137 @@
+/* ==========================================================================
+   Billing Suite — Shared Design Tokens
+   Source of truth: ../../STYLE-GUIDE.md and ../../design-tokens.css
+   Derived from the chromeExtensionAPIMock UI.
+
+   This is a copy kept inside the extension so its pages can link it
+   (Chrome extension resources resolve relative to the extension root).
+
+   Usage:
+     <link rel="stylesheet" href="design-tokens.css">
+     <link rel="stylesheet" href="app.css">
+     .btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
+   ========================================================================== */
+
+:root {
+  /* ---- Brand -------------------------------------------------------------- */
+  --color-primary: #667eea;          /* indigo — primary actions, accents */
+  --color-primary-accent: #764ba2;   /* purple — gradient end, deep emphasis */
+  --color-purple: #8e44ad;           /* secondary purple — tags, JSON keys */
+  --gradient-brand: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+  /* Tinted primary fills (derived from --color-primary rgb 102,126,234) */
+  --color-primary-tint-08: rgba(102, 126, 234, 0.08);
+  --color-primary-tint-10: rgba(102, 126, 234, 0.1);
+  --color-primary-tint-20: rgba(102, 126, 234, 0.2);
+
+  /* ---- Text --------------------------------------------------------------- */
+  --color-text: #2c3e50;             /* primary body & headings */
+  --color-text-secondary: #5a6472;   /* labels, icon buttons */
+  --color-text-muted: #8a94a6;       /* hints, meta, placeholders, counts */
+  --color-text-subtle: #3a4250;      /* form labels, secondary btn text */
+  --color-on-primary: #ffffff;       /* text/icon on primary or gradient */
+
+  /* ---- Surfaces ----------------------------------------------------------- */
+  --color-bg: #f5f6fa;               /* page/app background */
+  --surface: #ffffff;                /* cards, modals, inputs */
+  --surface-tint: #eef1fb;           /* highlighted bars, expanded rows */
+  --surface-muted: #f0f2f7;          /* group headers, hover fills */
+  --surface-code: #f7f8fb;           /* code / JSON blocks */
+  --surface-code-alt: #fbfcfe;       /* code viewer alt */
+
+  /* ---- Borders ------------------------------------------------------------ */
+  --border-strong: #dcdfe6;          /* inputs, buttons */
+  --border-default: #e4e7ed;         /* cards, dividers */
+  --border-light: #e0e4ec;           /* subtle separators */
+  --border-tint: #d6ddf5;            /* primary-tinted inputs */
+
+  /* ---- Semantic / status -------------------------------------------------- */
+  --color-success: #2ecc71;
+  --color-success-text: #27ae60;
+  --color-success-on: #4caf50;       /* toggle "on" */
+  --color-danger: #e74c3c;
+  --color-warning: #f39c12;
+  --color-warning-alt: #e67e22;      /* server-error orange */
+  --color-info: #3498db;
+  --color-info-text: #2980b9;
+  --color-info-link: #2563eb;
+  --color-neutral: #95a5a6;          /* disabled / unspecified */
+
+  /* HTTP method badges */
+  --method-get: #2ecc71;
+  --method-post: #3498db;
+  --method-put: #f39c12;
+  --method-delete: #e74c3c;
+  --method-default: #95a5a6;
+
+  /* JSON syntax */
+  --code-key: #8e44ad;
+  --code-string: #27ae60;
+  --code-number: #2980b9;
+  --code-boolean: #e67e22;
+  --code-bracket: #95a5a6;
+
+  /* ---- Typography --------------------------------------------------------- */
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+
+  --text-title: 18px;
+  --text-heading: 15px;
+  --text-body: 13px;
+  --text-sm: 12px;
+  --text-meta: 11px;
+  --text-micro: 10px;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ---- Spacing scale ------------------------------------------------------ */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+  --space-6: 14px;
+  --space-7: 16px;
+
+  /* ---- Radius ------------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-pill: 24px;
+  --radius-circle: 50%;
+
+  /* ---- Elevation ---------------------------------------------------------- */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 15px rgba(102, 126, 234, 0.4);  /* brand-tinted */
+  --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.3);       /* modals */
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);       /* overlays */
+
+  /* ---- Motion ------------------------------------------------------------- */
+  --transition-base: all 0.2s ease;
+  --transition-toggle-track: background-color 0.25s ease;
+  --transition-toggle-knob: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-collapse: max-height 0.28s ease, opacity 0.28s ease;
+  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---- Overlay ------------------------------------------------------------ */
+  --overlay-scrim: rgba(0, 0, 0, 0.5);
+}
+
+/* ---- Shared WebKit scrollbar --------------------------------------------- */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: var(--radius-sm); }
+::-webkit-scrollbar-thumb { background: rgba(102, 126, 234, 0.3); border-radius: var(--radius-sm); }
+::-webkit-scrollbar-thumb:hover { background: rgba(102, 126, 234, 0.5); }
+
+/* ---- Accessibility: honor reduced motion --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

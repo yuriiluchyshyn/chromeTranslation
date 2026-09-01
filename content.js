@@ -86,7 +86,7 @@
     panel: null, 
     translations: [], 
     isEnabled: false, 
-    uiLang: 'uk', 
+    uiLang: 'en', 
     toLang: 'uk', 
     storageLoaded: false, 
     showHints: true, 
@@ -485,7 +485,7 @@
         })).filter(item => item.orig.length > 0) : [];
         
         state.isEnabled = res.translatorEnabled !== false;
-        state.uiLang = validationUtils.sanitizeLangCode(res.uiLang || 'uk');
+        state.uiLang = validationUtils.sanitizeLangCode(res.uiLang || 'en');
         state.toLang = validationUtils.sanitizeLangCode(res.toLang || 'uk');
         state.showHints = res.showHints !== false;
         state.audioSpeed = validationUtils.validateNumber(res.audioSpeed, CONFIG.AUDIO_SPEED.MIN, CONFIG.AUDIO_SPEED.MAX, CONFIG.AUDIO_SPEED.DEFAULT);
@@ -619,8 +619,8 @@
       
       const b = document.createElement('button');
       b.id = 'tr-pdf-float-btn';
-      b.innerHTML = i18n[state.uiLang]?.pdfBtn || i18n.uk.pdfBtn;
-      b.style.cssText = `position:fixed!important;top:70px!important;right:10px!important;z-index:2147483647!important;background:rgba(26, 115, 232, 0.8)!important;color:white!important;border:1px solid rgba(255,255,255,0.2)!important;padding:8px 14px!important;border-radius:6px!important;cursor:pointer!important;font-weight:500!important;font-family:system-ui,sans-serif!important;font-size:13px!important;box-shadow:0 2px 10px rgba(0,0,0,0.1)!important;backdrop-filter:blur(4px);`;
+      b.innerHTML = i18n[state.uiLang]?.pdfBtn || i18n.en.pdfBtn;
+      b.style.cssText = `position:fixed!important;top:70px!important;right:10px!important;z-index:2147483647!important;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%)!important;color:white!important;border:1px solid rgba(255,255,255,0.2)!important;padding:8px 14px!important;border-radius:6px!important;cursor:pointer!important;font-weight:500!important;font-family:system-ui,sans-serif!important;font-size:13px!important;box-shadow:0 4px 15px rgba(102, 126, 234, 0.4)!important;backdrop-filter:blur(4px);`;
       
       b.onclick = () => {
         const validatedUrl = validationUtils.validateUrl(window.location.href);
@@ -785,7 +785,7 @@
    * @returns {Element} - Created hint element
    */
   function showLoadingHint(rect) {
-    const t = i18n[state.uiLang] || i18n.uk;
+    const t = i18n[state.uiLang] || i18n.en;
     return showHint(t.translating, rect, true);
   }
 
@@ -819,12 +819,12 @@
       }
       
       if (changes.uiLang) {
-        state.uiLang = validationUtils.sanitizeLangCode(changes.uiLang.newValue || 'uk');
+        state.uiLang = validationUtils.sanitizeLangCode(changes.uiLang.newValue || 'en');
         // Update PDF button text if it exists
         if (isPdf && !isOurReader && state.pdfButtonCreated) {
           const btn = domUtils.getElementById('tr-pdf-float-btn');
           if (btn) {
-            btn.innerHTML = escapeHTML(i18n[state.uiLang]?.pdfBtn || i18n.uk.pdfBtn);
+            btn.innerHTML = escapeHTML(i18n[state.uiLang]?.pdfBtn || i18n.en.pdfBtn);
           }
         }
       }
@@ -859,7 +859,7 @@
         @keyframes tr-bounce { 0%, 80%, 100% { transform: scale(0.4); opacity: 0.35; } 40% { transform: scale(1); opacity: 1; } }
         .tr-loading-dots { display: inline-flex; gap: 4px; align-items: center; height: 16px; }
         .tr-dot { width: 6px; height: 6px; border-radius: 50%; animation: tr-bounce 1.4s infinite ease-in-out both; }
-        #my-translator-panel .tr-dot { background: #1a73e8; }
+        #my-translator-panel .tr-dot { background: #667eea; }
         .tr-dot:nth-child(1) { animation-delay: -0.32s; }
         .tr-dot:nth-child(2) { animation-delay: -0.16s; }
         .tr-dot:nth-child(3) { animation-delay: 0s; }
@@ -880,44 +880,44 @@
           60%, 100% { transform: scale(1); }
         }
         .tr-speak.playing { 
-          opacity:1!important; color:#1a73e8!important; 
-          background: rgba(26, 115, 232, 0.1) !important;
-          box-shadow: 0 0 6px rgba(26, 115, 232, 0.1), 0 0 3px rgba(26, 115, 232, 0.2);
+          opacity:1!important; color:#667eea!important; 
+          background: rgba(102, 126, 234, 0.1) !important;
+          box-shadow: 0 0 6px rgba(102, 126, 234, 0.1), 0 0 3px rgba(102, 126, 234, 0.2);
           animation: tr-heartbeat 1.1s infinite ease-in-out;
         }
-        .tr-speak.loading { opacity:1!important; background: rgba(26, 115, 232, 0.08)!important; }
+        .tr-speak.loading { opacity:1!important; background: rgba(102, 126, 234, 0.08)!important; }
         .tr-speak .tr-loading-dots { gap:3px; height:12px; }
         .tr-speak .tr-dot { width:4px; height:4px; }
         
-        .lang-badge { font-size:9px;background:#f0f2f5;padding:2px 4px;border-radius:4px;margin-left:4px;color:#666;text-transform:uppercase;font-weight:bold; }
-        .tr-header-btn { border:none; background:none; cursor:pointer; font-size:14px; padding:4px; opacity:0.7; transition:0.2s; }
+        .lang-badge { font-size:9px;background:#f0f2f7;padding:2px 4px;border-radius:4px;margin-left:4px;color:#5a6472;text-transform:uppercase;font-weight:bold; }
+        .tr-header-btn { border:none; background:none; cursor:pointer; font-size:14px; padding:4px; color:#fff; opacity:0.85; transition:0.2s; }
         .tr-header-btn:hover { opacity:1; transform:scale(1.1); }
         .tr-speed-dropdown { position: relative; display: inline-block; }
         .tr-speed-btn { 
-          border:none; background:rgba(26, 115, 232, 0.1); cursor:pointer; font-size:11px; 
-          padding:4px 8px; opacity:0.8; transition:0.2s; border-radius:4px;
-          color:#1a73e8; font-weight:bold; min-width:40px;
+          border:none; background:rgba(255, 255, 255, 0.15); cursor:pointer; font-size:11px; 
+          padding:4px 8px; opacity:0.9; transition:0.2s; border-radius:4px;
+          color:#fff; font-weight:bold; min-width:40px;
         }
-        .tr-speed-btn:hover { opacity:1; background:rgba(26, 115, 232, 0.2); }
+        .tr-speed-btn:hover { opacity:1; background:rgba(255, 255, 255, 0.28); }
         .tr-speed-menu { 
           display:none; position:absolute; top:100%; right:0; background:white; 
-          border:1px solid #ddd; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); 
+          border:1px solid #e4e7ed; border-radius:6px; box-shadow:0 4px 15px rgba(102, 126, 234, 0.4); 
           z-index:10; min-width:100px;
         }
         .tr-speed-menu.show { display:block; }
         .tr-speed-option { 
-          padding:8px 12px; cursor:pointer; font-size:12px; 
-          border-bottom:1px solid #f0f2f5; transition:0.2s;
+          padding:8px 12px; cursor:pointer; font-size:12px; color:#2c3e50;
+          border-bottom:1px solid #f0f2f7; transition:0.2s;
         }
         .tr-speed-option:last-child { border-bottom:none; }
-        .tr-speed-option:hover { background:#f7f8f9; }
-        .tr-speed-option.active { background:#1a73e8; color:white; }
+        .tr-speed-option:hover { background:#f0f2f7; }
+        .tr-speed-option.active { background:#667eea; color:white; }
         .tr-pause-btn { 
-          border:none; background:none; cursor:pointer; font-size:14px; 
-          padding:4px; opacity:0.7; transition:0.2s; 
+          border:none; background:none; cursor:pointer; font-size:14px; color:#fff;
+          padding:4px; opacity:0.85; transition:0.2s; 
         }
         .tr-pause-btn:hover { opacity:1; transform:scale(1.1); }
-        .tr-pause-btn.paused { color:#1a73e8; opacity:1; }
+        .tr-pause-btn.paused { color:#fff; opacity:1; }
         .tr-controls { display:flex; align-items:center; gap:4px; }
       `;
       
@@ -944,12 +944,16 @@
         initialTop = Math.max(10, viewportHeight - panelMaxHeight - 10);
       }
       
-      state.panel.style.cssText = `position:fixed;top:${initialTop}px;right:${initialRight}px;width:${panelWidth}px;max-height:${panelMaxHeight}px;background:white;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:2147483647;display:none;flex-direction:column;overflow:hidden;font-family:system-ui,sans-serif;border:1px solid #eee;`;
+      // Anchor by left/top (not right) so the browser's bottom-right resize
+      // grip grows the panel naturally and stays consistent with drag logic.
+      const initialLeft = Math.max(10, viewportWidth - panelWidth - initialRight);
 
-      const t = i18n[state.uiLang] || i18n.uk;
+      state.panel.style.cssText = `position:fixed;top:${initialTop}px;left:${initialLeft}px;width:${panelWidth}px;min-width:250px;max-width:90vw;min-height:140px;max-height:90vh;background:white;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:2147483647;display:none;flex-direction:column;overflow:hidden;font-family:system-ui,sans-serif;border:1px solid #e4e7ed;resize:both;`;
+
+      const t = i18n[state.uiLang] || i18n.en;
     state.panel.innerHTML = `
-      <div style="background:#f7f8f9;padding:10px 12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;cursor:move;" id="tr-header">
-        <strong style="color:black;font-size:14px;">${t.dict}</strong>
+      <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);padding:10px 12px;border-bottom:none;display:flex;justify-content:space-between;align-items:center;cursor:move;" id="tr-header">
+        <strong style="color:#fff;font-size:14px;">${t.dict}</strong>
         <div class="tr-controls">
           <div class="tr-speed-dropdown">
             <button id="tr-speed" class="tr-speed-btn" title="${t.speed}">1x</button>
@@ -966,10 +970,10 @@
           <button id="tr-pause" class="tr-pause-btn tr-header-btn" title="Pause/Resume">${t.play}</button>
           <button id="tr-stop" class="tr-header-btn" title="Stop audio">${t.stop}</button>
           <button id="tr-clear" class="tr-header-btn" title="Clear list">${t.clear}</button>
-          <button id="tr-close" style="border:none;background:none;cursor:pointer;font-size:20px;color:#999;line-height:1;margin-left:4px;">×</button>
+          <button id="tr-close" style="border:none;background:none;cursor:pointer;font-size:20px;color:rgba(255,255,255,0.85);line-height:1;margin-left:4px;">×</button>
         </div>
       </div>
-      <div id="tr-list" style="padding:10px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;"></div>`;
+      <div id="tr-list" style="padding:10px;overflow-y:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;"></div>`;
 
     document.documentElement.appendChild(state.panel);
     
@@ -1097,7 +1101,7 @@
 
   function updatePauseButton() {
     const pauseBtn = domUtils.getElementById('tr-pause');
-    const t = i18n[state.uiLang] || i18n.uk;
+    const t = i18n[state.uiLang] || i18n.en;
     if (pauseBtn) {
       pauseBtn.innerHTML = state.isAudioPaused ? t.play : t.pause;
       pauseBtn.classList.toggle('paused', state.isAudioPaused);
@@ -1167,7 +1171,7 @@
     // Use batch update for better performance
     domUtils.batchUpdate(() => {
       if (state.translations.length === 0) { 
-        list.innerHTML = `<div style="text-align:center;color:#aaa;font-size:12px;margin-top:20px;">${(i18n[state.uiLang] || i18n.uk).hint}</div>`; 
+        list.innerHTML = `<div style="text-align:center;color:#8a94a6;font-size:12px;margin-top:20px;">${(i18n[state.uiLang] || i18n.en).hint}</div>`; 
         return; 
       }
 
@@ -1177,15 +1181,15 @@
       state.translations.forEach(i => {
         const isWait = i.trans === "...";
         const div = document.createElement('div');
-        div.style.cssText = 'border-bottom:1px solid #f0f2f5;padding-bottom:8px;';
+        div.style.cssText = 'border-bottom:1px solid #f0f2f7;padding-bottom:8px;';
         
         div.innerHTML = `
-        <div style="font-size:11px;color:#888;display:flex;align-items:center;">
+        <div style="font-size:11px;color:#8a94a6;display:flex;align-items:center;">
           <span style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(i.orig)}</span>
           <span class="lang-badge">${escapeHTML(i.fromLang)}</span> 
           <button class="tr-speak" data-t="${escapeHTML(i.orig)}" data-l="${escapeHTML(i.fromLang)}">🔊</button>
         </div>
-        <div style="font-size:14px;font-weight:600;color:#1c1e21;display:flex;align-items:center;margin-top:4px;">
+        <div style="font-size:14px;font-weight:600;color:#2c3e50;display:flex;align-items:center;margin-top:4px;">
           ${isWait ? `<div class="tr-loading-dots"><div class="tr-dot"></div><div class="tr-dot"></div><div class="tr-dot"></div></div>` : `<span>${escapeHTML(i.trans)}</span>`} 
           ${isWait ? '' : `<span class="lang-badge">${escapeHTML(i.actualToLang || i.toLang)}</span> <button class="tr-speak" data-t="${escapeHTML(i.trans)}" data-l="${escapeHTML(i.actualToLang || i.toLang)}">🔊</button>`}
         </div>`;
@@ -1401,7 +1405,7 @@
     let content, dimensions, position;
     
     if (isLoading) {
-      const loadingLabel = ((i18n[state.uiLang] || i18n.uk).translating || 'Translating...').replace(/\.+$/, '');
+      const loadingLabel = ((i18n[state.uiLang] || i18n.en).translating || 'Translating...').replace(/\.+$/, '');
       content = `
         <div style="display:flex;align-items:center;gap:8px;">
           <span>${escapeHTML(loadingLabel)}</span>

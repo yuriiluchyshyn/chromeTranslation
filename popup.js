@@ -169,7 +169,7 @@ function pingTab(tab, onAlive, onDead) {
 // Показує/ховає попередження про непідтримувану сторінку у попапі.
 function checkPageTranslatable() {
   chrome.storage.local.get(['uiLang'], ({ uiLang }) => {
-    const t = i18n[uiLang] || i18n.uk;
+    const t = i18n[uiLang] || i18n.en;
     const box = document.getElementById('page-warning');
     const textEl = document.getElementById('page-warning-text');
     const linkEl = document.getElementById('page-warning-link');
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 1. Завантажуємо налаштування та оновлюємо інтерфейс
   chrome.storage.local.get(['translatorEnabled', 'fromLang', 'toLang', 'uiLang', 'showHints', 'aiEnabled', 'aiReadingEnabled', 'aiStyle', 'aiPrompt', 'geminiApiKey', 'cloudTtsApiKey'], (res) => {
-    const ui = res.uiLang || 'uk';
+    const ui = res.uiLang || 'en';
     const t = i18n[ui];
 
     // Оновлюємо тексти інтерфейсу

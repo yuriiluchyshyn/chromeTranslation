@@ -131,7 +131,7 @@ function isDeprecated(id) {
   return deprecated.some(d => id === d || id.startsWith(d + '-'));
 }
 
-let currentLang = 'uk';
+let currentLang = 'en';
 
 // Прості SVG-іконки для перемикача показу ключа (стиль Feather).
 // EYE — ключ прихований (клік показує); EYE_OFF — ключ видимий (клік ховає).
@@ -234,9 +234,9 @@ document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get(['geminiApiKey', 'cloudTtsApiKey', 'uiLang', 'toLang', 'aiModel'], (res) => {
     if (res.geminiApiKey) document.getElementById('geminiKey').value = res.geminiApiKey;
     if (res.cloudTtsApiKey) document.getElementById('cloudTtsKey').value = res.cloudTtsApiKey;
-    if (res.uiLang) document.getElementById('uiLang').value = res.uiLang;
+    document.getElementById('uiLang').value = res.uiLang || 'en';
     if (res.toLang) document.getElementById('defLang').value = res.toLang;
-    update(res.uiLang || 'uk');
+    update(res.uiLang || 'en');
     updateModelAvailability();
 
     // Якщо вже є Gemini ключ — одразу підвантажуємо моделі
@@ -300,7 +300,7 @@ document.getElementById('save').onclick = () => {
 };
 
 function update(lang) {
-  currentLang = i18n[lang] ? lang : 'uk';
+  currentLang = i18n[lang] ? lang : 'en';
   const t = i18n[currentLang];
   
   // Main settings
